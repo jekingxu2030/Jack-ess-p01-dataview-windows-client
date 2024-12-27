@@ -165,8 +165,9 @@ class WebSocketClient(QMainWindow):
                     item_id = str(item.get("id"))
                     value = item.get("value", "N/A")
                     self.latest_rtv_data[item_id] = value
-                    self.log(f"更新数据缓存: ID={item_id}, 值={value}")
-                
+                    # self.log(f"更新数据缓存: ID={item_id}, 值={value}")
+                   
+                self.log(f"更新 {len(rtv_data)} 个数据缓存")   
                 # 如果当前有选中的项，更新显示
                 current_item = self.device_tree.currentItem()
                 if current_item:
@@ -379,7 +380,11 @@ class WebSocketClient(QMainWindow):
                 
                 if device_type in grouped_data:
                     grouped_data[device_type].append((str_id, device_info, value))
-
+                    
+                    
+            #输出缓存池数据数量
+            self.log(f"获取数据值个数:{len(rtv_ids)}")
+                    
             # 显示分组数据
             color_map = {
                 "d_bms": QColor(230, 230, 255),           # 浅蓝色 - BMS电池
@@ -411,7 +416,7 @@ class WebSocketClient(QMainWindow):
         try:
             # 从缓存中获取最新数据
             value = self.latest_rtv_data.get(item_id, "N/A")
-            self.log(f"获取数据值: ID={item_id}, 值={value}")
+            # self.log(f"获取数据值: ID={item_id}, 值={value}")
             return value
         except Exception as e:
             self.log(f"获取数据值出错: {str(e)}")
@@ -493,7 +498,7 @@ class WebSocketWorker(QThread):
                                 self.log_signal.emit("已重新发送menu订阅请求")
                             
                             message = await websocket.recv()
-                            self.log_signal.emit(f"收到原始消息: {message[:200]}...")  # 只显示前200个字符
+                            self.log_signal.emit(f"收到原始消息: {message[:100]}...")  # 只显示前200个字符
                             
                             if isinstance(message, str):
                                 data = json.loads(message)
@@ -526,9 +531,9 @@ class WebSocketWorker(QThread):
                         except Exception as e:
                             self.log_signal.emit(f"接收数据错误: {str(e)}")
                             
-                except Exception as e:
-                    self.log_signal.emit(f"WebSocket连接错误: {str(e)}，3秒后重试...")
-                    await asyncio.sleep(3)  # 等待3秒后重试
+            except Exception as e:
+                self.log_signal.emit(f"WebSocket连接错误: {str(e)}，3秒后重试...")
+                await asyncio.sleep(3)  # 等待3秒后重试
 
     def run(self):
         asyncio.run(self.connect_websocket())
