@@ -7,20 +7,20 @@
       "RelativeMoniker": "D:0:0:{03D17872-7811-430B-A12B-4922BBBEF0C9}|BY-EMS Monitoring System.csproj|solutionrelative:mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{03D17872-7811-430B-A12B-4922BBBEF0C9}|BY-EMS Monitoring System.csproj|f:\\360downloads\\baidunetdiskdownload\\wictooldemo\\autorunby-ems\\c#\\by-ems monitoring system\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{03D17872-7811-430B-A12B-4922BBBEF0C9}|BY-EMS Monitoring System.csproj|solutionrelative:app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{03D17872-7811-430B-A12B-4922BBBEF0C9}|BY-EMS Monitoring System.csproj|F:\\360Downloads\\BaiduNetdiskDownload\\WicToolDemo\\autoRunBY-EMS\\C#\\BY-EMS Monitoring System\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{03D17872-7811-430B-A12B-4922BBBEF0C9}|BY-EMS Monitoring System.csproj|solutionrelative:mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{03D17872-7811-430B-A12B-4922BBBEF0C9}|BY-EMS Monitoring System.csproj|f:\\360downloads\\baidunetdiskdownload\\wictooldemo\\autorunby-ems\\c#\\by-ems monitoring system\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{03D17872-7811-430B-A12B-4922BBBEF0C9}|BY-EMS Monitoring System.csproj|F:\\360Downloads\\BaiduNetdiskDownload\\WicToolDemo\\autoRunBY-EMS\\C#\\BY-EMS Monitoring System\\app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{03D17872-7811-430B-A12B-4922BBBEF0C9}|BY-EMS Monitoring System.csproj|solutionrelative:app.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{03D17872-7811-430B-A12B-4922BBBEF0C9}|BY-EMS Monitoring System.csproj|f:\\360downloads\\baidunetdiskdownload\\wictooldemo\\autorunby-ems\\c#\\by-ems monitoring system\\app.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
+      "AbsoluteMoniker": "D:0:0:{03D17872-7811-430B-A12B-4922BBBEF0C9}|BY-EMS Monitoring System.csproj|F:\\360Downloads\\BaiduNetdiskDownload\\WicToolDemo\\autoRunBY-EMS\\C#\\BY-EMS Monitoring System\\app.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
       "RelativeMoniker": "D:0:0:{03D17872-7811-430B-A12B-4922BBBEF0C9}|BY-EMS Monitoring System.csproj|solutionrelative:app.config||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{03D17872-7811-430B-A12B-4922BBBEF0C9}|BY-EMS Monitoring System.csproj|f:\\360downloads\\baidunetdiskdownload\\wictooldemo\\autorunby-ems\\c#\\by-ems monitoring system\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
-      "RelativeMoniker": "D:0:0:{03D17872-7811-430B-A12B-4922BBBEF0C9}|BY-EMS Monitoring System.csproj|solutionrelative:mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+      "AbsoluteMoniker": "D:0:0:{03D17872-7811-430B-A12B-4922BBBEF0C9}|BY-EMS Monitoring System.csproj|F:\\360Downloads\\BaiduNetdiskDownload\\WicToolDemo\\autoRunBY-EMS\\C#\\BY-EMS Monitoring System\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{03D17872-7811-430B-A12B-4922BBBEF0C9}|BY-EMS Monitoring System.csproj|solutionrelative:app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -40,20 +40,20 @@
               "RelativeDocumentMoniker": "MainWindow.xaml.cs",
               "ToolTip": "F:\\360Downloads\\BaiduNetdiskDownload\\WicToolDemo\\autoRunBY-EMS\\C#\\BY-EMS Monitoring System\\MainWindow.xaml.cs",
               "RelativeToolTip": "MainWindow.xaml.cs",
-              "ViewState": "AQIAAF0AAAAAAAAAAAAAAAAAAAAAAAAA",
+              "ViewState": "AQIAAE4AAAAAAAAAAAAAAFQAAAA+AAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-12-27T07:36:37.452Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 4,
               "Title": "App.xaml.cs",
               "DocumentMoniker": "F:\\360Downloads\\BaiduNetdiskDownload\\WicToolDemo\\autoRunBY-EMS\\C#\\BY-EMS Monitoring System\\App.xaml.cs",
               "RelativeDocumentMoniker": "App.xaml.cs",
               "ToolTip": "F:\\360Downloads\\BaiduNetdiskDownload\\WicToolDemo\\autoRunBY-EMS\\C#\\BY-EMS Monitoring System\\App.xaml.cs",
               "RelativeToolTip": "App.xaml.cs",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAABEAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-12-27T07:36:35.366Z",
               "EditorCaption": ""
@@ -85,7 +85,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 1,
               "Title": "MainWindow.xaml",
               "DocumentMoniker": "F:\\360Downloads\\BaiduNetdiskDownload\\WicToolDemo\\autoRunBY-EMS\\C#\\BY-EMS Monitoring System\\MainWindow.xaml",
               "RelativeDocumentMoniker": "MainWindow.xaml",

@@ -6,10 +6,9 @@ from datetime import datetime
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                            QHBoxLayout, QPushButton, QLabel, QTextEdit, 
                            QTreeWidget, QTreeWidgetItem, QListWidget, QListWidgetItem,
-                           QHeaderView, QGraphicsDropShadowEffect)
+                           QHeaderView, QGraphicsDropShadowEffect, QLineEdit, QSizePolicy)
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
 from PyQt5.QtGui import QColor, QIcon, QFont
-
 import traceback
 
 # EMS监控系统客户端主窗口类
@@ -34,28 +33,263 @@ class WebSocketClient(QMainWindow):
         
         self.initUI()  # 初始化UI
 
+        self.device_tree.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # 禁止横向滚动条
+        
     # 初始化UI
     def initUI(self):
         self.setWindowTitle('BY-EMS监控系统')  # 设置窗口标题
         self.setGeometry(100, 100, 1600, 900)  # 设置窗口大小
         
-        # 添加窗口边框样式的设置
-        self.setStyleSheet("QMainWindow { border: 0px solid red; border-radius: 0px; background-color: rgba(255, 255, 255, 0.8); }")  # 设置边框样式
+        # 添加窗口边框样式的设置 rgba(255, 255, 255, 0.8)
+        self.setStyleSheet("QMainWindow { border: 0px solid red; border-radius: 0px; background-color: rgba(255, 255, 255, 1); padding: 5px;}")  # 设置边框样式
         self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=2, xOffset=2, yOffset=2))  # 添加阴影效果
 
-        # 创建中心部件和布局
+        #=== 创建中心部件和布局
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QHBoxLayout(central_widget)
+        main_layout.setContentsMargins(5, 5, 5, 5)  # 设置左、上、右、下边距为10像素
 
-        # 创建左侧面板
+        #=== 创建左侧面板gin
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
-        left_panel.setMaximumWidth(600)
+        left_layout.setContentsMargins(2, 2, 2, 2)
+        left_panel.setMaximumWidth(700)
         # 设置左侧面板背景颜色
-        left_panel.setStyleSheet("QWidget { background-color: #f0f0f0; }")  # 设置为浅灰色背景
-        # 设置左侧面板的边距
-        left_panel.setContentsMargins(1, 1, 1, 1)  # 设置为10像素的边距
+        left_panel.setStyleSheet("""
+            QWidget { background-color: #ffffff;  border-radius: 5px;}
+        """)  # 设置为浅灰色背景
+
+        #=== 设置数据菜单栏
+        self.device_tree = QTreeWidget(self)  # 设备树控件
+        self.device_tree.setHeaderLabels(['设备列表'])  # 设备树标题
+        self.device_tree.setMaximumWidth(700)
+        self.device_tree.setMinimumHeight(int(self.height() * 0.15))  # 设置监控设置栏高度为20%
+        self.device_tree.setStyleSheet("""
+            QTreeWidget {
+                background-color: #ffffff;
+                font-size: 14px;
+                border: 1px solid gray;
+                color : #2196F3;
+            }
+              QHeaderView::section {
+            /* background-color: #f0f0f0;  设置标题背景色 */
+             color: #2196F3;  /* 设置标题文本颜色 */
+             font-weight: bold;  /* 设置标题文本加粗 */
+             border: 0px solid gray;
+           }
+        """)
+        left_layout.addWidget(self.device_tree)  # 添加数据菜单栏
+
+        #=== 创建监控设置栏
+        monitoring_settings_panel = QWidget()
+        monitoring_settings_layout = QVBoxLayout(monitoring_settings_panel)
+        monitoring_settings_layout.setContentsMargins(10, 10, 10, 10)  # 设置内容边距为0像素
+        monitoring_settings_panel.setStyleSheet("""
+         QWidget { 
+           background-color: #f0f0f0;
+            padding: 10px;
+             }  /* 设置监控设置栏背景颜色 */
+         """)
+        # 添加左上角标题
+        top_left_label = QLabel('监控设置', self)
+        top_left_label.setStyleSheet("""
+            font-size: 14px;
+            font-weight: bold;
+            color: #2196F3;
+            margin: 0px;
+            padding: 10px;
+        """)  # 设置左上角标题样式
+        # top_left_label.setGeometry(2, 2, 100, 30)  # 设置绝对位置和大小
+        monitoring_settings_layout.addWidget(top_left_label)  # 添加左上角标题
+ 
+        #== 添加充电时间输入框
+        charging_time_label = QLabel('充电时间(HH):', self)
+        charging_time_widget = QWidget(self)  # 创建一个新的QWidget来包含充电时间布局
+        charging_time_layout = QHBoxLayout(charging_time_widget)
+        charging_time_widget.setStyleSheet("background-color: #f0f0f0;")  # 设置背景色
+        self.charging_time_input_start = QLineEdit(self)
+        self.charging_time_input_end = QLineEdit(self)
+        self.charging_time_input_start.setFixedWidth(200)  # 设置宽度为100px
+        self.charging_time_input_end.setFixedWidth(200)  # 设置宽度为100px
+        self.charging_time_input_start.setStyleSheet("""
+            QLineEdit {
+               background-color: rgba(128, 128, 128, 0.1);   
+                text-align: center;
+                border: 1px solid #f0f0f0;
+                border-radius: 2px;
+                color:#2196F3;
+                padding: 2px;
+                font-size: 12px;
+                 
+            }
+        """)
+        self.charging_time_input_end.setStyleSheet("""
+            QLineEdit {
+                background-color: rgba(128, 128, 128, 0.1);   
+                text-align: center;
+                border: 1px solid #f0f0f0;
+                border-radius: 2px;
+                color:#2196F3;
+                padding: 2px;
+                font-size: 12px;
+            }
+        """)
+        charging_time_layout.addWidget(charging_time_label)
+        charging_time_layout.addWidget(self.charging_time_input_start)
+        charging_time_layout.addWidget(self.charging_time_input_end)
+        charging_time_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
+        charging_time_widget = QWidget(self)  # 创建一个新的QWidget来包含充电时间布局
+        charging_time_widget.setLayout(charging_time_layout)  # 设置布局
+        charging_time_widget.setStyleSheet("""
+            QWidget { background-color: #f0f0f0; }
+        """)  # 设置样式
+        monitoring_settings_layout.addWidget(charging_time_widget)  # 将新QWidget添加到监控设置栏
+        # 在添加控件的布局中
+        charging_time_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
+        
+
+        #== 添加放电时间输入框
+        discharging_time_label = QLabel('放电时间(HH):', self)
+        discharging_time_widget = QWidget(self)  # 创建一个新的QWidget来包含放电时间布局
+        discharging_time_layout = QHBoxLayout(discharging_time_widget)  # 创建水平布局并将其设置为discharging_time_widget的布局
+        # discharging_time_widget.setStyleSheet("background-color: #f0f0f0;")  # 设置背景色
+        discharging_time_widget.setAutoFillBackground(True)  # 确保背景填充整个widget
+        self.discharging_time_input_start = QLineEdit(self)
+        self.discharging_time_input_end = QLineEdit(self)
+        self.discharging_time_input_start.setFixedWidth(200)  # 设置宽度为100px
+        self.discharging_time_input_end.setFixedWidth(200)  # 设置宽度为100px
+        discharging_time_layout.addWidget(discharging_time_label)
+        discharging_time_layout.addWidget(self.discharging_time_input_start)
+        discharging_time_layout.addWidget(self.discharging_time_input_end)
+        discharging_time_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
+        discharging_time_widget.setStyleSheet("background-color: #f0f0f0;")  # 设置背景色
+        self.discharging_time_input_start.setStyleSheet("""
+            QLineEdit {
+                background-color: rgba(128, 128, 128, 0.1);  
+                text-align: center;
+                border: 1px solid #f0f0f0;
+                border-radius: 2px;
+                color:#2196F3;
+                padding: 2px;
+                font-size: 12px;
+            }
+        """)
+        self.discharging_time_input_end.setStyleSheet("""
+            QLineEdit {
+                background-color: rgba(128, 128, 128, 0.1);  
+                text-align: center;
+                border: 1px solid #f0f0f0;
+                border-radius: 2px;
+                color:#2196F3;
+                padding: 2px;
+                font-size: 12px;
+            }
+        """)
+        discharging_time_widget = QWidget(self)  # 创建一个新的QWidget来包含放电时间布局
+        discharging_time_widget.setLayout(discharging_time_layout)  # 设置布局
+        discharging_time_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
+        monitoring_settings_layout.addWidget(discharging_time_widget)  # 将新QWidget添加到监控设置栏
+
+         
+        #== 添加充电SOC上限输入框
+        charging_soc_label = QLabel('充电SOC上限:', self)
+        charging_soc_layout = QHBoxLayout()  # 创建水平布局
+        self.charging_soc_input = QLineEdit(self)
+        self.charging_soc_input.setFixedWidth(410)  # 设置宽度为100px
+        charging_soc_layout.addWidget(charging_soc_label)
+        charging_soc_layout.addWidget(self.charging_soc_input)
+        charging_soc_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
+        self.charging_soc_input.setStyleSheet("""
+            QLineEdit {
+                background-color: rgba(128, 128, 128, 0.1);  
+                text-align: center;
+                border: 1px solid #f0f0f0;
+                border-radius: 2px;
+                color:#2196F3;
+                padding: 2px;
+                font-size: 12px;
+            }
+        """)
+        charging_soc_widget = QWidget(self)  # 创建一个新的QWidget来包含充电SOC布局
+        charging_soc_widget.setLayout(charging_soc_layout)  # 设置布局
+        charging_soc_widget.setStyleSheet("""
+            QWidget { background-color: #f0f0f0; }
+        """)  # 设置样式
+        monitoring_settings_layout.addWidget(charging_soc_widget)  # 将新QWidget添加到监控设置栏
+        charging_soc_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
+      
+
+
+         #== 添加放电SOC下限输入框
+        discharging_soc_label = QLabel('放电SOC下限:', self)
+        discharging_soc_layout = QHBoxLayout()  # 创建水平布局
+        self.discharging_soc_input = QLineEdit(self)
+        self.discharging_soc_input.setFixedWidth(410)  # 设置宽度为100px
+        discharging_soc_layout.addWidget(discharging_soc_label)
+        discharging_soc_layout.addWidget(self.discharging_soc_input)
+        discharging_soc_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
+        self.discharging_soc_input.setStyleSheet("""
+            QLineEdit {
+                background-color: rgba(128, 128, 128, 0.1);   
+                text-align: center;
+                border: 1px solid #f0f0f0;
+                border-radius: 2px;
+                color:#2196F3;
+                padding: 2px;
+                font-size: 12px;
+            }
+        """)
+        discharging_soc_widget = QWidget(self)  # 创建一个新的QWidget来包含放电SOC布局
+
+        discharging_soc_widget.setLayout(discharging_soc_layout)  # 设置布局
+        discharging_soc_widget.setStyleSheet("""
+            QWidget { background-color: #f0f0f0; }
+        """)  # 设置样式
+        monitoring_settings_layout.addWidget(discharging_soc_widget)  # 将新QWidget添加到监控设置栏
+  
+
+       # 设置监控栏样式
+        monitoring_settings_panel.setMinimumHeight(int(self.height() * 0.3))  # 设置监控设置栏高度为30%
+        monitoring_settings_panel.setStyleSheet("""
+            QWidget { background-color: #f0f0f0; }
+        """)  # 设置监控设置栏背景颜色
+
+        left_layout.addWidget(monitoring_settings_panel)  # 添加监控设置栏
+        #  设置输入框的宽度
+        charging_time_label.setFixedWidth(100)  # 设置宽度为100px
+        discharging_time_label.setFixedWidth(100)  # 设置宽度为100px
+        charging_soc_label.setFixedWidth(100)  # 设置宽度为100px
+        discharging_soc_label.setFixedWidth(100)  # 设置宽度为100px
+        # 设置输入框的对齐方式
+        self.charging_time_input_start.setAlignment(Qt.AlignCenter)
+        self.charging_time_input_end.setAlignment(Qt.AlignCenter)
+        self.discharging_time_input_start.setAlignment(Qt.AlignCenter)
+        self.discharging_time_input_end.setAlignment(Qt.AlignCenter)
+        self.charging_soc_input.setAlignment(Qt.AlignCenter)
+        self.discharging_soc_input.setAlignment(Qt.AlignCenter)
+
+        # 设置文本颜色
+        label_color = "#2196F3"  # 您可以根据需要更改颜色
+        charging_time_label.setStyleSheet(f"color: {label_color};")
+        discharging_time_label.setStyleSheet(f"color: {label_color};")
+        charging_soc_label.setStyleSheet(f"color: {label_color};")
+        discharging_soc_label.setStyleSheet(f"color: {label_color};")        
+
+
+        # 创建日志显示区
+        self.log_text = QTextEdit(self)  # 日志显示控件
+        self.log_text.setReadOnly(True)  # 日志显示区只读
+        self.log_text.setMaximumHeight(int(self.height() * 0.5))  # 设置日志显示区高度为40%
+        self.log_text.setStyleSheet("""
+            QTextEdit {
+                background-color: #f0f0f0;
+                font-size: 12px;
+                color: #333333;
+                border: 0px solid gray;
+            }
+        """)  # 设置日志显示区背景颜色
+        left_layout.addWidget(self.log_text)  # 添加日志显示区
 
         # 创建控制按钮
         button_layout = QHBoxLayout()  # 创建水平布局放置按钮
@@ -71,49 +305,52 @@ class WebSocketClient(QMainWindow):
         self.refresh_btn.clicked.connect(self.refresh_data)
         self.refresh_btn.setEnabled(False)  # 初始时禁用
         
+        # 设置按钮样式
+        self.connect_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;  /* 绿色 */
+                color: white;  /* 字体颜色 */
+                padding: 10px;  /* 内边距 */
+                border: none;  /* 无边框 */
+                border-radius: 5px;  /* 圆角 */
+            }
+            QPushButton:hover {
+                background-color: #45a049;  /* 悬停时的背景色 */
+            }
+        """)
+
+        self.disconnect_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #f44336;  /* 红色 */
+                color: white;  /* 字体颜色 */
+                padding: 10px;  /* 内边距 */
+                border: none;  /* 无边框 */
+                border-radius: 5px;  /* 圆角 */
+            }
+            QPushButton:hover {        
+                background-color: #e53935;  /* 悬停时的背景色 */
+            }
+        """)
+
+        self.refresh_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2196F3;  /* 蓝色 */
+                color: white;  /* 字体颜色 */
+                padding: 10px;  /* 内边距 */
+                border: none;  /* 无边框 */
+                border-radius: 5px;  /* 圆角 */
+            }
+            QPushButton:hover {
+                background-color: #1976D2;  /* 悬停时的背景色 */
+            }
+        """)
+
         button_layout.addWidget(self.connect_btn)
         button_layout.addWidget(self.disconnect_btn)
         button_layout.addWidget(self.refresh_btn)
         
-        # 创建设备树
-        self.device_tree = QTreeWidget(self)  # 设备树控件
-        self.device_tree.setHeaderLabels(['设备列表'])  # 设备树标题
-        self.device_tree.itemClicked.connect(self.on_tree_item_clicked)  # 设备树项点击事件
-        self.device_tree.setMaximumWidth(598)  # 设置为左侧面板宽度的99%
-        # self.device_tree.setMinimumWidth(590)  # 设置为左侧面板宽度的99%
-        # 设置左侧数据项目菜单框样式
-        self.device_tree.setStyleSheet("""
-            QTreeWidget {
-                border: 0px solid gray;
-                background-color: #f9f9f9;
-                font-size: 14px;
-            }
-            QTreeWidget::item {
-                padding: 1px;
-            }
-            QTreeWidget::item:selected {
-                background-color: #d0e0f0;
-            }
-        """)
 
-        # 创建日志显示区
-        self.log_text = QTextEdit(self)  # 日志显示控件
-        self.log_text.setReadOnly(True)  # 日志显示区只读
-        self.log_text.setMaximumHeight(400)  # 日志显示区最大高度
-        # 设置调试输出框样式
-        self.log_text.setStyleSheet("""
-            QTextEdit {
-                border: 0px solid gray;
-                background-color: #ffffff;
-                font-size: 12px;
-                color: #333333;
-            }
-        """)
-
-        # 添加控件到左侧面板
         left_layout.addLayout(button_layout)  # 使用布局替代单独添加按钮
-        left_layout.addWidget(self.device_tree)
-        left_layout.addWidget(self.log_text)
 
         # 创建右侧数据显示列表
         self.data_list = QListWidget(self)  # 数据显示列表控件
@@ -123,9 +360,11 @@ class WebSocketClient(QMainWindow):
         self.data_list.setStyleSheet("""
             QListWidget {
                 border: 0px solid gray;
-                background-color: #ffffff;
+                background-color: #f0f0f0;
                 font-size: 14px;
                 color: #333333;
+                border-radius: 5px;
+                padding: 5px;
             }
             QListWidget::item {
                 padding: 1px;
@@ -138,6 +377,16 @@ class WebSocketClient(QMainWindow):
         # 添加面板到主布局
         main_layout.addWidget(left_panel)
         main_layout.addWidget(self.data_list)
+
+        # 设置输入框的大小策略
+        self.charging_time_input_start.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.charging_time_input_end.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.discharging_time_input_start.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.discharging_time_input_end.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.charging_soc_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.discharging_soc_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    
+
 
     # 日志记录函数
     def log(self, message):
@@ -166,7 +415,7 @@ class WebSocketClient(QMainWindow):
             self.connect_btn.setEnabled(True)
             self.disconnect_btn.setEnabled(False)
             self.refresh_btn.setEnabled(False)
-
+    
     # 停止WebSocket工作线程
     def stop_websocket(self):
         self.update_timer.stop()  # 停止定时器
@@ -313,7 +562,7 @@ class WebSocketClient(QMainWindow):
             for device_type, items in grouped_data.items():
                 if items:  # 如果该类型有数据
                     # 添加设备类型标题
-                    title_item = QListWidgetItem(f"===== {device_type} =====")
+                    title_item = QListWidgetItem(f"*{device_type}*")
                     title_item.setBackground(color_map[device_type])
                     self.data_list.addItem(title_item)
 
@@ -333,6 +582,11 @@ class WebSocketClient(QMainWindow):
                         self.data_list.addItem(list_item)
 
             self.log(f"数据列表更新完成，当前列表项数: {self.data_list.count()}")
+
+            # 修改设备类型标题的格式
+            title_item = QListWidgetItem(f"*{device_type}*")
+            title_item.setBackground(color_map[device_type])
+            self.data_list.addItem(title_item)
             
         except Exception as e:
             self.log(f"更新数据列表出错: {str(e)}")
@@ -444,7 +698,7 @@ class WebSocketClient(QMainWindow):
             for device_type, items in grouped_data.items():
                 if items:
                     # 添加设备类型标题
-                    title_item = QListWidgetItem(f"===== {device_type} =====")
+                    title_item = QListWidgetItem(f"==={device_type}===")
                     title_item.setBackground(color_map[device_type])
                     self.data_list.addItem(title_item)
 
