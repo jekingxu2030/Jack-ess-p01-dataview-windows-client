@@ -165,8 +165,9 @@ class WebSocketClient(QMainWindow):
                     item_id = str(item.get("id"))
                     value = item.get("value", "N/A")
                     self.latest_rtv_data[item_id] = value
-                    self.log(f"更新数据缓存: ID={item_id}, 值={value}")
-                
+                    # self.log(f"更新数据缓存: ID={item_id}, 值={value}")
+                   
+                self.log(f"更新 {len(rtv_data)} 个数据缓存")   
                 # 如果当前有选中的项，更新显示
                 current_item = self.device_tree.currentItem()
                 if current_item:
@@ -316,7 +317,7 @@ class WebSocketClient(QMainWindow):
         return level
 
     def get_rtv_ids_for_item(self, item, level):
-        """根据点击项和层级获取需���显示的数据ID列表"""
+        """根据点击项和层级获取需显示的数据ID列表"""
         rtv_ids = []
         
         try:
@@ -379,7 +380,11 @@ class WebSocketClient(QMainWindow):
                 
                 if device_type in grouped_data:
                     grouped_data[device_type].append((str_id, device_info, value))
-
+                    
+                    
+            #输出缓存池数据数量
+            self.log(f"获取数据值个数:{len(rtv_ids)}")
+                    
             # 显示分组数据
             color_map = {
                 "d_bms": QColor(230, 230, 255),           # 浅蓝色 - BMS电池
@@ -411,7 +416,7 @@ class WebSocketClient(QMainWindow):
         try:
             # 从缓存中获取最新数据
             value = self.latest_rtv_data.get(item_id, "N/A")
-            self.log(f"获取数据值: ID={item_id}, 值={value}")
+            # self.log(f"获取数据值: ID={item_id}, 值={value}")
             return value
         except Exception as e:
             self.log(f"获取数据值出错: {str(e)}")
@@ -427,8 +432,12 @@ class WebSocketClient(QMainWindow):
         try:
             self.log("手动刷新数据...")
             if self.ws_worker and self.ws_worker.websocket:
-                # 通过工作线程请求刷新
-                self.ws_worker.request_refresh()
+                # 清空现有数据
+                self.latest_rtv_data.clear()
+                self.device_info.clear()
+                # 重新连接
+                self.stop_websocket()
+                self.start_websocket()
                 self.log("已发送刷新请求")
         except Exception as e:
             self.log(f"刷新数据出错: {str(e)}")
@@ -444,7 +453,7 @@ class WebSocketClient(QMainWindow):
                 if rtv_ids:
                     self.update_data_list_by_ids(rtv_ids)
         except Exception as e:
-            pass  # 静默处理定时器的错误，避免日��刷屏
+            pass  # 静默处理定时器的错误，避免日志刷屏
 
 # WebSocket工作线程类
 class WebSocketWorker(QThread):
@@ -467,69 +476,64 @@ class WebSocketWorker(QThread):
             "Origin": "http://ems.hy-power.net:8114",
         }
 
-        try:
-            async with websockets.connect(uri, extra_headers=headers) as websocket:
-                self.websocket = websocket
-                self.log_signal.emit("WebSocket连接已建立")
-                
-                # 发送初始menu订阅
-                menu_subscribe = {"func": "menu"}
-                await websocket.send(json.dumps(menu_subscribe))
-                self.log_signal.emit("已发送menu订阅请求")
-                
-                while self.is_running:
-                    try:
-                        # 检查是否需要刷新
-                        if self.need_refresh:
-                            self.need_refresh = False
-                            # 重新发送menu订阅
-                            menu_subscribe = {"func": "menu"}
-                            await websocket.send(json.dumps(menu_subscribe))
-                            self.log_signal.emit("已重新发送menu订阅请求")
-                        
-                        message = await websocket.recv()
-                        self.log_signal.emit(f"收到原始消息: {message[:200]}...")  # 只显示前200个字符
-                        
-                        if isinstance(message, str):
-                            data = json.loads(message)
-                            self.message_signal.emit(data)
-                            
-                            # 如果收到menu数据，自动发送rtv订阅
-                            if data.get("func") == "menu":
-                                # 从menu数据中提取所有ID
-                                rtv_ids = []
-                                menu_data = data.get("data", {})
-                                for device_type, devices in menu_data.items():
-                                    for device in devices:
-                                        for rtv_item in device.get("rtvList", []):
-                                            rtv_ids.append(rtv_item["id"])
-                                
-                                # 发送rtv订阅消息
-                                rtv_subscribe = {
-                                    "func": "rtv",
-                                    "ids": rtv_ids,
-                                    "period": 5
-                                }
-                                await websocket.send(json.dumps(rtv_subscribe))
-                                self.log_signal.emit(f"已发送rtv订阅请求，订阅 {len(rtv_ids)} 个ID")
-                            
-                    except websockets.exceptions.ConnectionClosed:
-                        self.log_signal.emit("WebSocket连接已关闭")
-                        self.is_running = False  # 确保线程停止
-                        break
-                    except json.JSONDecodeError as e:
-                        self.log_signal.emit(f"JSON解析错误: {str(e)}")
-                    except Exception as e:
-                        self.log_signal.emit(f"接收数据错误: {str(e)}")
-                        
-                # 循环结束后关闭连接
-                try:
-                    await websocket.close()
-                except:
-                    pass
+        while self.is_running:  # 添加外层循环实现重连
+            try:
+                async with websockets.connect(uri, extra_headers=headers) as websocket:
+                    self.websocket = websocket
+                    self.log_signal.emit("WebSocket连接已建立")
                     
-        except Exception as e:
-            self.log_signal.emit(f"WebSocket连接错误: {str(e)}")
+                    # 发送初始menu订阅
+                    menu_subscribe = {"func": "menu"}
+                    await websocket.send(json.dumps(menu_subscribe))
+                    self.log_signal.emit("已发送menu订阅请求")
+                    
+                    while self.is_running:
+                        try:
+                            # 检查是否需要刷新
+                            if self.need_refresh:
+                                self.need_refresh = False
+                                # 重新发送menu订阅
+                                menu_subscribe = {"func": "menu"}
+                                await websocket.send(json.dumps(menu_subscribe))
+                                self.log_signal.emit("已重新发送menu订阅请求")
+                            
+                            message = await websocket.recv()
+                            self.log_signal.emit(f"收到原始消息: {message[:100]}...")  # 只显示前200个字符
+                            
+                            if isinstance(message, str):
+                                data = json.loads(message)
+                                self.message_signal.emit(data)
+                                
+                                # 如果收到menu数据，自动发送rtv订阅
+                                if data.get("func") == "menu":
+                                    # 从menu数据中提取所有ID
+                                    rtv_ids = []
+                                    menu_data = data.get("data", {})
+                                    for device_type, devices in menu_data.items():
+                                        for device in devices:
+                                            for rtv_item in device.get("rtvList", []):
+                                                rtv_ids.append(rtv_item["id"])
+                                    
+                                    # 发送rtv订阅消息
+                                    rtv_subscribe = {
+                                        "func": "rtv",
+                                        "ids": rtv_ids,
+                                        "period": 5
+                                    }
+                                    await websocket.send(json.dumps(rtv_subscribe))
+                                    self.log_signal.emit(f"已发送rtv订阅请求，订阅 {len(rtv_ids)} 个ID")
+                                
+                        except websockets.exceptions.ConnectionClosed:
+                            self.log_signal.emit("WebSocket连接已关闭，准备重连...")
+                            break  # 跳出内层循环，外层循环会重新连接
+                        except json.JSONDecodeError as e:
+                            self.log_signal.emit(f"JSON解析错误: {str(e)}")
+                        except Exception as e:
+                            self.log_signal.emit(f"接收数据错误: {str(e)}")
+                            
+            except Exception as e:
+                self.log_signal.emit(f"WebSocket连接错误: {str(e)}，3秒后重试...")
+                await asyncio.sleep(3)  # 等待3秒后重试
 
     def run(self):
         asyncio.run(self.connect_websocket())

@@ -94,6 +94,10 @@ socket.send(subscribeMessage2);
 
 
 
+第4步：监控关键数据SOC
+在ems_websocket_client.py程序中的更新数据的地方加一个调用外部监控模块：F:\360Downloads\BaiduNetdiskDownload\WicToolDemo\autoRunBY-EMS\emsContronl.py
+然后将412001056-SOC、412001051-簇电池簇状态、412001053-簇组电流、409001067-三相实时有功功率(KW)、413001100-柜内温度(℃) 这些数据传递到模块中，然后分别设计判断方法，分别判断数据及相关处理，
+同时
 
 
 # EMS监控系统使用说明

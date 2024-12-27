@@ -6,9 +6,10 @@ from datetime import datetime
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                            QHBoxLayout, QPushButton, QLabel, QTextEdit, 
                            QTreeWidget, QTreeWidgetItem, QListWidget, QListWidgetItem,
-                           QHeaderView)
+                           QHeaderView, QGraphicsDropShadowEffect)
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
 from PyQt5.QtGui import QColor, QIcon, QFont
+
 import traceback
 
 # EMS监控系统客户端主窗口类
@@ -27,7 +28,6 @@ class WebSocketClient(QMainWindow):
         # 设置窗口图标
         icon_path = "./img/ems.png"  # 图标文件路径
         try:
-            from PyQt5.QtGui import QIcon
             self.setWindowIcon(QIcon(icon_path))
         except Exception as e:
             self.log(f"设置窗口图标失败: {str(e)}")
@@ -38,6 +38,10 @@ class WebSocketClient(QMainWindow):
     def initUI(self):
         self.setWindowTitle('BY-EMS监控系统')  # 设置窗口标题
         self.setGeometry(100, 100, 1600, 900)  # 设置窗口大小
+        
+        # 添加窗口边框样式的设置
+        self.setStyleSheet("QMainWindow { border: 0px solid red; border-radius: 0px; background-color: rgba(255, 255, 255, 0.8); }")  # 设置边框样式
+        self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=2, xOffset=2, yOffset=2))  # 添加阴影效果
 
         # 创建中心部件和布局
         central_widget = QWidget()
@@ -48,6 +52,10 @@ class WebSocketClient(QMainWindow):
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
         left_panel.setMaximumWidth(600)
+        # 设置左侧面板背景颜色
+        left_panel.setStyleSheet("QWidget { background-color: #f0f0f0; }")  # 设置为浅灰色背景
+        # 设置左侧面板的边距
+        left_panel.setContentsMargins(1, 1, 1, 1)  # 设置为10像素的边距
 
         # 创建控制按钮
         button_layout = QHBoxLayout()  # 创建水平布局放置按钮
@@ -71,11 +79,36 @@ class WebSocketClient(QMainWindow):
         self.device_tree = QTreeWidget(self)  # 设备树控件
         self.device_tree.setHeaderLabels(['设备列表'])  # 设备树标题
         self.device_tree.itemClicked.connect(self.on_tree_item_clicked)  # 设备树项点击事件
+        self.device_tree.setMaximumWidth(598)  # 设置为左侧面板宽度的99%
+        # self.device_tree.setMinimumWidth(590)  # 设置为左侧面板宽度的99%
+        # 设置左侧数据项目菜单框样式
+        self.device_tree.setStyleSheet("""
+            QTreeWidget {
+                border: 0px solid gray;
+                background-color: #f9f9f9;
+                font-size: 14px;
+            }
+            QTreeWidget::item {
+                padding: 1px;
+            }
+            QTreeWidget::item:selected {
+                background-color: #d0e0f0;
+            }
+        """)
 
         # 创建日志显示区
         self.log_text = QTextEdit(self)  # 日志显示控件
         self.log_text.setReadOnly(True)  # 日志显示区只读
         self.log_text.setMaximumHeight(400)  # 日志显示区最大高度
+        # 设置调试输出框样式
+        self.log_text.setStyleSheet("""
+            QTextEdit {
+                border: 0px solid gray;
+                background-color: #ffffff;
+                font-size: 12px;
+                color: #333333;
+            }
+        """)
 
         # 添加控件到左侧面板
         left_layout.addLayout(button_layout)  # 使用布局替代单独添加按钮
@@ -85,6 +118,22 @@ class WebSocketClient(QMainWindow):
         # 创建右侧数据显示列表
         self.data_list = QListWidget(self)  # 数据显示列表控件
         self.data_list.setStyleSheet("QListWidget { font-size: 14px; }")  # 设置列表样式
+        
+        # 设置右侧数据详细显示框样式
+        self.data_list.setStyleSheet("""
+            QListWidget {
+                border: 0px solid gray;
+                background-color: #ffffff;
+                font-size: 14px;
+                color: #333333;
+            }
+            QListWidget::item {
+                padding: 1px;
+            }
+            QListWidget::item:selected {
+                background-color: #d0e0f0;
+            }
+        """)
 
         # 添加面板到主布局
         main_layout.addWidget(left_panel)
@@ -274,7 +323,6 @@ class WebSocketClient(QMainWindow):
                         list_item = QListWidgetItem(display_text)
                         
                         # 设置等宽字体以便对齐
-                        from PyQt5.QtGui import QFont
                         font = QFont("Courier New")  # 使用等宽字体
                         list_item.setFont(font)
                         
