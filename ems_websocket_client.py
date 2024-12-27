@@ -41,45 +41,64 @@ class WebSocketClient(QMainWindow):
         self.setGeometry(100, 100, 1600, 900)  # 设置窗口大小
         
         # 添加窗口边框样式的设置 rgba(255, 255, 255, 0.8)
-        self.setStyleSheet("QMainWindow { border: 0px solid red; border-radius: 0px; background-color: rgba(255, 255, 255, 1); padding: 5px;}")  # 设置边框样式
+        self.setStyleSheet("QMainWindow { border: 0px solid red; border-radius: 0px; background-color: #f0f0f0; padding: 5px;}")  # 设置边框样式
         self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=2, xOffset=2, yOffset=2))  # 添加阴影效果
 
         #=== 创建中心部件和布局
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QHBoxLayout(central_widget)
-        main_layout.setContentsMargins(5, 5, 5, 5)  # 设置左、上、右、下边距为10像素
+        main_layout.setContentsMargins(0, 0, 0, 0)  # 设置左、上、右、下边距为10像素
 
         #=== 创建左侧面板gin
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
-        left_layout.setContentsMargins(2, 2, 2, 2)
+        left_layout.setContentsMargins(5, 5, 5, 5)
         left_panel.setMaximumWidth(700)
         # 设置左侧面板背景颜色
         left_panel.setStyleSheet("""
-            QWidget { background-color: #ffffff;  border-radius: 5px;}
+            QWidget { background-color: #f0f0f0;  border-radius: 5px;}
         """)  # 设置为浅灰色背景
 
-        #=== 设置数据菜单栏
+
+         # 添加标签
+        top_left_label = QLabel('设备列表', self)  # 创建标签
+        top_left_label.setStyleSheet("""
+             font-size: 14px;
+             font-weight: bold;
+             color: #2196F3;
+             margin: 0px;
+             padding: 10px;
+         """)  # 设置标签样式
+
+        # left_layout.addWidget(top_left_label)  # 将标签添加到布局中
+
+        # 设置数据菜单栏
         self.device_tree = QTreeWidget(self)  # 设备树控件
         self.device_tree.setHeaderLabels(['设备列表'])  # 设备树标题
         self.device_tree.setMaximumWidth(700)
-        self.device_tree.setMinimumHeight(int(self.height() * 0.15))  # 设置监控设置栏高度为20%
+        self.device_tree.setMinimumHeight(int(self.height() * 0.15))  # 设置监控设置栏高度为15%
         self.device_tree.setStyleSheet("""
             QTreeWidget {
-                background-color: #ffffff;
+                 background-color: rgba(255, 255, 255, 0);
                 font-size: 14px;
-                border: 1px solid gray;
-                color : #2196F3;
+                border: 1px solid rgba(128, 128, 128, 0.1);
+                border-radius: 5px;
+                color: #2196F3;
+                
             }
-              QHeaderView::section {
-            /* background-color: #f0f0f0;  设置标题背景色 */
-             color: #2196F3;  /* 设置标题文本颜色 */
-             font-weight: bold;  /* 设置标题文本加粗 */
-             border: 0px solid gray;
-           }
+            QHeaderView::section {
+                color: #2196F3;  /* 设置标题文本颜色 */
+                font-weight: bold;  /* 设置标题文本加粗 */
+                border: 0px solid red;         
+                padding-left:20px ;
+               
+            }
         """)
-        left_layout.addWidget(self.device_tree)  # 添加数据菜单栏
+      
+
+        
+      
 
         #=== 创建监控设置栏
         monitoring_settings_panel = QWidget()
@@ -99,6 +118,7 @@ class WebSocketClient(QMainWindow):
             color: #2196F3;
             margin: 0px;
             padding: 10px;
+              padding-top:20px ;
         """)  # 设置左上角标题样式
         # top_left_label.setGeometry(2, 2, 100, 30)  # 设置绝对位置和大小
         monitoring_settings_layout.addWidget(top_left_label)  # 添加左上角标题
@@ -114,7 +134,7 @@ class WebSocketClient(QMainWindow):
         self.charging_time_input_end.setFixedWidth(200)  # 设置宽度为100px
         self.charging_time_input_start.setStyleSheet("""
             QLineEdit {
-               background-color: rgba(128, 128, 128, 0.1);   
+               background-color:rgba(255, 255, 255, 0.9);   
                 text-align: center;
                 border: 1px solid #f0f0f0;
                 border-radius: 2px;
@@ -126,7 +146,7 @@ class WebSocketClient(QMainWindow):
         """)
         self.charging_time_input_end.setStyleSheet("""
             QLineEdit {
-                background-color: rgba(128, 128, 128, 0.1);   
+                background-color:rgba(255, 255, 255, 0.9);   
                 text-align: center;
                 border: 1px solid #f0f0f0;
                 border-radius: 2px;
@@ -153,7 +173,6 @@ class WebSocketClient(QMainWindow):
         discharging_time_label = QLabel('放电时间(HH):', self)
         discharging_time_widget = QWidget(self)  # 创建一个新的QWidget来包含放电时间布局
         discharging_time_layout = QHBoxLayout(discharging_time_widget)  # 创建水平布局并将其设置为discharging_time_widget的布局
-        # discharging_time_widget.setStyleSheet("background-color: #f0f0f0;")  # 设置背景色
         discharging_time_widget.setAutoFillBackground(True)  # 确保背景填充整个widget
         self.discharging_time_input_start = QLineEdit(self)
         self.discharging_time_input_end = QLineEdit(self)
@@ -166,7 +185,7 @@ class WebSocketClient(QMainWindow):
         discharging_time_widget.setStyleSheet("background-color: #f0f0f0;")  # 设置背景色
         self.discharging_time_input_start.setStyleSheet("""
             QLineEdit {
-                background-color: rgba(128, 128, 128, 0.1);  
+                 background-color:rgba(255, 255, 255, 0.9);   
                 text-align: center;
                 border: 1px solid #f0f0f0;
                 border-radius: 2px;
@@ -177,7 +196,7 @@ class WebSocketClient(QMainWindow):
         """)
         self.discharging_time_input_end.setStyleSheet("""
             QLineEdit {
-                background-color: rgba(128, 128, 128, 0.1);  
+                 background-color:rgba(255, 255, 255, 0.9);   
                 text-align: center;
                 border: 1px solid #f0f0f0;
                 border-radius: 2px;
@@ -202,7 +221,7 @@ class WebSocketClient(QMainWindow):
         charging_soc_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
         self.charging_soc_input.setStyleSheet("""
             QLineEdit {
-                background-color: rgba(128, 128, 128, 0.1);  
+                 background-color:rgba(255, 255, 255, 0.9);   
                 text-align: center;
                 border: 1px solid #f0f0f0;
                 border-radius: 2px;
@@ -231,7 +250,7 @@ class WebSocketClient(QMainWindow):
         discharging_soc_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
         self.discharging_soc_input.setStyleSheet("""
             QLineEdit {
-                background-color: rgba(128, 128, 128, 0.1);   
+                 background-color:rgba(255, 255, 255, 0.9);     
                 text-align: center;
                 border: 1px solid #f0f0f0;
                 border-radius: 2px;
@@ -241,7 +260,6 @@ class WebSocketClient(QMainWindow):
             }
         """)
         discharging_soc_widget = QWidget(self)  # 创建一个新的QWidget来包含放电SOC布局
-
         discharging_soc_widget.setLayout(discharging_soc_layout)  # 设置布局
         discharging_soc_widget.setStyleSheet("""
             QWidget { background-color: #f0f0f0; }
@@ -254,13 +272,8 @@ class WebSocketClient(QMainWindow):
         monitoring_settings_panel.setStyleSheet("""
             QWidget { background-color: #f0f0f0; }
         """)  # 设置监控设置栏背景颜色
-
         left_layout.addWidget(monitoring_settings_panel)  # 添加监控设置栏
-        #  设置输入框的宽度
-        charging_time_label.setFixedWidth(100)  # 设置宽度为100px
-        discharging_time_label.setFixedWidth(100)  # 设置宽度为100px
-        charging_soc_label.setFixedWidth(100)  # 设置宽度为100px
-        discharging_soc_label.setFixedWidth(100)  # 设置宽度为100px
+         
         # 设置输入框的对齐方式
         self.charging_time_input_start.setAlignment(Qt.AlignCenter)
         self.charging_time_input_end.setAlignment(Qt.AlignCenter)
@@ -276,8 +289,10 @@ class WebSocketClient(QMainWindow):
         charging_soc_label.setStyleSheet(f"color: {label_color};")
         discharging_soc_label.setStyleSheet(f"color: {label_color};")        
 
+        left_layout.addWidget(self.device_tree)  # 添加数据菜单栏
 
-        # 创建日志显示区
+
+        #===== 创建日志显示区
         self.log_text = QTextEdit(self)  # 日志显示控件
         self.log_text.setReadOnly(True)  # 日志显示区只读
         self.log_text.setMaximumHeight(int(self.height() * 0.5))  # 设置日志显示区高度为40%
@@ -286,7 +301,8 @@ class WebSocketClient(QMainWindow):
                 background-color: #f0f0f0;
                 font-size: 12px;
                 color: #333333;
-                border: 0px solid gray;
+                border: 1px solid rgba(128, 128, 128, 0.1);
+                border-radius: 5px;
             }
         """)  # 设置日志显示区背景颜色
         left_layout.addWidget(self.log_text)  # 添加日志显示区
