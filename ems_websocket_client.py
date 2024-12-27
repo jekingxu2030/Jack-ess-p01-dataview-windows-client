@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
 from PyQt5.QtGui import QColor, QIcon, QFont
 import traceback
+from emsContronl import ChargeDischargeController  # 导入监控控制器
 
 # EMS监控系统客户端主窗口类
 class WebSocketClient(QMainWindow):
@@ -18,6 +19,7 @@ class WebSocketClient(QMainWindow):
         self.ws_worker = None  # WebSocket工作线程实例
         self.device_info = {}  # 设备ID和名称的映射关系
         self.latest_rtv_data = {}  # 存储最新的rtv数据
+        self.controller = ChargeDischargeController()  # 创建监控控制器实例
         
         # 添加定时器，每秒更新一次显示
         self.update_timer = QTimer()
@@ -770,6 +772,18 @@ class WebSocketClient(QMainWindow):
                 rtv_ids = self.get_rtv_ids_for_item(current_item, level)
                 if rtv_ids:
                     self.update_data_list_by_ids(rtv_ids)
+                    
+            # 假设这些数据是您从某个地方获取的
+            soc = self.latest_rtv_data.get('412001056')  # SOC
+            charging_start_time = self.charging_time_input_start.text()  # 获取充电开始时间
+            charging_end_time = self.charging_time_input_end.text()  # 获取充电结束时间
+            discharging_start_time = self.discharging_time_input_start.text()  # 获取放电开始时间
+            discharging_end_time = self.discharging_time_input_end.text()  # 获取放电结束时间
+            soc_upper_limit = self.charging_soc_input.text()  # 获取SOC上限
+            soc_lower_limit = self.discharging_soc_input.text()  # 获取SOC下限
+
+            # 调用监控控制器的方法
+            self.controller.monitor_charge_discharge(soc, charging_start_time, charging_end_time, discharging_start_time, discharging_end_time, soc_upper_limit, soc_lower_limit)
         except Exception as e:
             pass  # 静默处理定时器的错误，避免日志刷屏
 
