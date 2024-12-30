@@ -1,3 +1,4 @@
+from re import S
 import sys
 import json
 import asyncio
@@ -8,7 +9,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                            QTreeWidget, QTreeWidgetItem, QListWidget, QListWidgetItem,
                            QHeaderView, QGraphicsDropShadowEffect, QLineEdit, QSizePolicy)
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
-from PyQt5.QtGui import QColor, QIcon, QFont
+from PyQt5.QtGui import QColor, QIcon, QFont,QIntValidator, QDoubleValidator
 import traceback
 from emsContronl import ChargeDischargeController  # 导入监控控制器
 
@@ -19,12 +20,13 @@ class WebSocketClient(QMainWindow):
         self.ws_worker = None  # WebSocket工作线程实例
         self.device_info = {}  # 设备ID和名称的映射关系
         self.latest_rtv_data = {}  # 存储最新的rtv数据
-        self.controller = ChargeDischargeController()  # 创建监控控制器实例
         
+        self.log_text = QTextEdit(self)
+        self.log_text.setReadOnly(True)  # 设置为只读
         # 添加定时器，每秒更新一次显示
         self.update_timer = QTimer()
         self.update_timer.timeout.connect(self.update_display)
-        self.update_timer.start(1000)  # 1000毫秒 = 1秒
+        self.update_timer.start(3000)  # 1000毫秒 = 1秒
         
         # 设置窗口图标
         icon_path = "./img/ems.png"  # 图标文件路径
@@ -35,11 +37,23 @@ class WebSocketClient(QMainWindow):
         
         self.initUI()  # 初始化UI
 
+        
+        self.controller = ChargeDischargeController(log_callback=self.log)  # 创建监控控制器实例
+
         self.device_tree.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # 禁止横向滚动条
+      
+        # self.setup_input_validations()  # 设置输入验证
+
+        # self.connect_btn.setEnabled(False)
+        # self.disconnect_btn.setEnabled(False)
+        # self.refresh_btn.setEnabled(False)
+        # self.disconnect_btn.setStyleSheet(" color: darkgray;")  # 禁用状态样式
+        # self.refresh_btn.setStyleSheet("color: darkgray;")  # 禁用状态样式
+        
         
     # 初始化UI
     def initUI(self):
-        self.setWindowTitle('BY-EMS监控系统')  # 设置窗口标题
+        self.setWindowTitle('BY-EMS Monitoring System V1.0')  # 设置窗口标题
         self.setGeometry(100, 100, 1600, 900)  # 设置窗口大小
         
         # 添加窗口边框样式的设置 rgba(255, 255, 255, 0.8)
@@ -55,7 +69,7 @@ class WebSocketClient(QMainWindow):
         #=== 创建左侧面板gin
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
-        left_layout.setContentsMargins(5, 5, 5, 5)
+        left_layout.setContentsMargins(5, 2, 5, 5)
         left_panel.setMaximumWidth(700)
         # 设置左侧面板背景颜色
         left_panel.setStyleSheet("""
@@ -94,13 +108,11 @@ class WebSocketClient(QMainWindow):
                 font-weight: bold;  /* 设置标题文本加粗 */
                 border: 0px solid red;         
                 padding-left:20px ;
+                padding-top:30px ;
                
             }
         """)
-      
-
-        
-      
+        left_layout.addWidget(self.device_tree)  # 添加数据菜单栏        
 
         #=== 创建监控设置栏
         monitoring_settings_panel = QWidget()
@@ -110,7 +122,8 @@ class WebSocketClient(QMainWindow):
          QWidget { 
            background-color: #f0f0f0;
             padding: 10px;
-             }  /* 设置监控设置栏背景颜色 */
+           
+             }   
          """)
         # 添加左上角标题
         top_left_label = QLabel('监控设置', self)
@@ -121,15 +134,16 @@ class WebSocketClient(QMainWindow):
             margin: 0px;
             padding: 10px;
               padding-top:20px ;
+              border:0px
         """)  # 设置左上角标题样式
         # top_left_label.setGeometry(2, 2, 100, 30)  # 设置绝对位置和大小
         monitoring_settings_layout.addWidget(top_left_label)  # 添加左上角标题
  
         #== 添加充电时间输入框
         charging_time_label = QLabel('充电时间(HH):', self)
-        charging_time_widget = QWidget(self)  # 创建一个新的QWidget来包含充电时间布局
+        charging_time_widget = QWidget(self)  # 创建一个新的QWidget来包含充电时间标题布局
         charging_time_layout = QHBoxLayout(charging_time_widget)
-        charging_time_widget.setStyleSheet("background-color: #f0f0f0;")  # 设置背景色
+        charging_time_widget.setStyleSheet("background-color: #f0f0f0; border:0px")  # 设置背景色
         self.charging_time_input_start = QLineEdit(self)
         self.charging_time_input_end = QLineEdit(self)
         self.charging_time_input_start.setFixedWidth(200)  # 设置宽度为100px
@@ -139,7 +153,7 @@ class WebSocketClient(QMainWindow):
                background-color:rgba(255, 255, 255, 0.9);   
                 text-align: center;
                 border: 1px solid #f0f0f0;
-                border-radius: 2px;
+                border-radius: 1px;
                 color:#2196F3;
                 padding: 2px;
                 font-size: 12px;
@@ -151,46 +165,53 @@ class WebSocketClient(QMainWindow):
                 background-color:rgba(255, 255, 255, 0.9);   
                 text-align: center;
                 border: 1px solid #f0f0f0;
-                border-radius: 2px;
+                border-radius: 1px;
                 color:#2196F3;
                 padding: 2px;
                 font-size: 12px;
             }
         """)
+
         charging_time_layout.addWidget(charging_time_label)
         charging_time_layout.addWidget(self.charging_time_input_start)
         charging_time_layout.addWidget(self.charging_time_input_end)
         charging_time_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
+
         charging_time_widget = QWidget(self)  # 创建一个新的QWidget来包含充电时间布局
         charging_time_widget.setLayout(charging_time_layout)  # 设置布局
         charging_time_widget.setStyleSheet("""
-            QWidget { background-color: #f0f0f0; }
+            QWidget { background-color: #f0f0f0; border:0px}
         """)  # 设置样式
         monitoring_settings_layout.addWidget(charging_time_widget)  # 将新QWidget添加到监控设置栏
         # 在添加控件的布局中
-        charging_time_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
-        
+        charging_time_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐   
 
         #== 添加放电时间输入框
         discharging_time_label = QLabel('放电时间(HH):', self)
         discharging_time_widget = QWidget(self)  # 创建一个新的QWidget来包含放电时间布局
         discharging_time_layout = QHBoxLayout(discharging_time_widget)  # 创建水平布局并将其设置为discharging_time_widget的布局
-        discharging_time_widget.setAutoFillBackground(True)  # 确保背景填充整个widget
+        # discharging_time_widget.setAutoFillBackground(True)  # 确保背景填充整个widget
         self.discharging_time_input_start = QLineEdit(self)
         self.discharging_time_input_end = QLineEdit(self)
+        
         self.discharging_time_input_start.setFixedWidth(200)  # 设置宽度为100px
         self.discharging_time_input_end.setFixedWidth(200)  # 设置宽度为100px
         discharging_time_layout.addWidget(discharging_time_label)
+        discharging_time_label.setStyleSheet("""
+              border:0px;
+        """)
+        discharging_time_widget.setStyleSheet("background-color: #f0f0f0; border: 0px;")  # 设置背景色和边框
+        # discharging_time_layout.setSpacing(0)  # 设置布局间距为0
         discharging_time_layout.addWidget(self.discharging_time_input_start)
         discharging_time_layout.addWidget(self.discharging_time_input_end)
         discharging_time_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
-        discharging_time_widget.setStyleSheet("background-color: #f0f0f0;")  # 设置背景色
+        discharging_time_widget.setStyleSheet("background-color: #f0f0f0; border:0px;")  # 设置背景色
         self.discharging_time_input_start.setStyleSheet("""
             QLineEdit {
                  background-color:rgba(255, 255, 255, 0.9);   
                 text-align: center;
-                border: 1px solid #f0f0f0;
-                border-radius: 2px;
+                border: 0px  ;
+                border-radius: 1px;
                 color:#2196F3;
                 padding: 2px;
                 font-size: 12px;
@@ -200,24 +221,21 @@ class WebSocketClient(QMainWindow):
             QLineEdit {
                  background-color:rgba(255, 255, 255, 0.9);   
                 text-align: center;
-                border: 1px solid #f0f0f0;
-                border-radius: 2px;
+                border: 0px solid #f0f0f0;
+                border-radius: 1px;
                 color:#2196F3;
                 padding: 2px;
                 font-size: 12px;
             }
         """)
-        discharging_time_widget = QWidget(self)  # 创建一个新的QWidget来包含放电时间布局
-        discharging_time_widget.setLayout(discharging_time_layout)  # 设置布局
         discharging_time_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
         monitoring_settings_layout.addWidget(discharging_time_widget)  # 将新QWidget添加到监控设置栏
 
-         
         #== 添加充电SOC上限输入框
-        charging_soc_label = QLabel('充电SOC上限:', self)
+        charging_soc_label = QLabel('充电SOC上限(%):', self)
         charging_soc_layout = QHBoxLayout()  # 创建水平布局
         self.charging_soc_input = QLineEdit(self)
-        self.charging_soc_input.setFixedWidth(410)  # 设置宽度为100px
+        self.charging_soc_input.setFixedWidth(450)  # 设置宽度为120+120+10
         charging_soc_layout.addWidget(charging_soc_label)
         charging_soc_layout.addWidget(self.charging_soc_input)
         charging_soc_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
@@ -226,7 +244,7 @@ class WebSocketClient(QMainWindow):
                  background-color:rgba(255, 255, 255, 0.9);   
                 text-align: center;
                 border: 1px solid #f0f0f0;
-                border-radius: 2px;
+                border-radius: 1px;
                 color:#2196F3;
                 padding: 2px;
                 font-size: 12px;
@@ -235,18 +253,16 @@ class WebSocketClient(QMainWindow):
         charging_soc_widget = QWidget(self)  # 创建一个新的QWidget来包含充电SOC布局
         charging_soc_widget.setLayout(charging_soc_layout)  # 设置布局
         charging_soc_widget.setStyleSheet("""
-            QWidget { background-color: #f0f0f0; }
+            QWidget { background-color: #f0f0f0;border:0px }
         """)  # 设置样式
         monitoring_settings_layout.addWidget(charging_soc_widget)  # 将新QWidget添加到监控设置栏
         charging_soc_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
-      
-
 
          #== 添加放电SOC下限输入框
-        discharging_soc_label = QLabel('放电SOC下限:', self)
+        discharging_soc_label = QLabel('放电SOC下限(%):', self)
         discharging_soc_layout = QHBoxLayout()  # 创建水平布局
         self.discharging_soc_input = QLineEdit(self)
-        self.discharging_soc_input.setFixedWidth(410)  # 设置宽度为100px
+        self.discharging_soc_input.setFixedWidth(450)  # 设置宽度为100px
         discharging_soc_layout.addWidget(discharging_soc_label)
         discharging_soc_layout.addWidget(self.discharging_soc_input)
         discharging_soc_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
@@ -255,24 +271,24 @@ class WebSocketClient(QMainWindow):
                  background-color:rgba(255, 255, 255, 0.9);     
                 text-align: center;
                 border: 1px solid #f0f0f0;
-                border-radius: 2px;
+                border-radius: 1px;
                 color:#2196F3;
                 padding: 2px;
                 font-size: 12px;
+                border:0px
             }
         """)
         discharging_soc_widget = QWidget(self)  # 创建一个新的QWidget来包含放电SOC布局
         discharging_soc_widget.setLayout(discharging_soc_layout)  # 设置布局
         discharging_soc_widget.setStyleSheet("""
-            QWidget { background-color: #f0f0f0; }
+            QWidget { background-color: #f0f0f0; border:0px}
         """)  # 设置样式
         monitoring_settings_layout.addWidget(discharging_soc_widget)  # 将新QWidget添加到监控设置栏
   
-
        # 设置监控栏样式
         monitoring_settings_panel.setMinimumHeight(int(self.height() * 0.3))  # 设置监控设置栏高度为30%
         monitoring_settings_panel.setStyleSheet("""
-            QWidget { background-color: #f0f0f0; }
+            QWidget { background-color: #f0f0f0;   border: 1px solid rgba(128, 128, 128, 0.1);}
         """)  # 设置监控设置栏背景颜色
         left_layout.addWidget(monitoring_settings_panel)  # 添加监控设置栏
          
@@ -286,12 +302,32 @@ class WebSocketClient(QMainWindow):
 
         # 设置文本颜色
         label_color = "#2196F3"  # 您可以根据需要更改颜色
-        charging_time_label.setStyleSheet(f"color: {label_color};")
-        discharging_time_label.setStyleSheet(f"color: {label_color};")
-        charging_soc_label.setStyleSheet(f"color: {label_color};")
-        discharging_soc_label.setStyleSheet(f"color: {label_color};")        
+        charging_time_label.setStyleSheet(f"color: {label_color};width: 100px;  ")
+        discharging_time_label.setStyleSheet(f"color: {label_color};width: 100px;  ")
+        charging_soc_label.setStyleSheet(f"color: {label_color};width: 100px;  ")
+        discharging_soc_label.setStyleSheet(f"color: {label_color};width: 100px;  ")   
 
-        left_layout.addWidget(self.device_tree)  # 添加数据菜单栏
+        # 设置监控标题标签宽度 #
+        charging_time_label.setFixedWidth(120)  # 设置固定宽度
+        discharging_time_label.setFixedWidth(120)  # 设置固定宽度
+        charging_soc_label.setFixedWidth(120)  # 设置固定宽度
+        discharging_soc_label.setFixedWidth(120)  # 设置固定宽度
+
+        # 设置输入框宽度
+        self.charging_time_input_start.setFixedWidth(100)  # 设置固定宽度
+        self.charging_time_input_end.setFixedWidth(100)  # 设置固定宽度
+        self.discharging_time_input_start.setFixedWidth(100)  # 设置固定宽度
+        self.discharging_time_input_end.setFixedWidth(100)  # 设置固定宽度
+        self.charging_soc_input.setFixedWidth(200)  # 设置固定宽度
+        self.discharging_soc_input.setFixedWidth(200)  # 设置固定宽度  
+
+        # 假设你有六个输入框
+        self.charging_soc_input.setValidator(QIntValidator(0, 100))  # 整数范围 0-100
+        self.charging_time_input_start.setValidator(QIntValidator(0, 23))  # 小时范围 0-23
+        self.charging_time_input_end.setValidator(QIntValidator(0, 23))  # 小时范围 0-23
+        self.discharging_time_input_start.setValidator(QIntValidator(0, 23))  # 小时范围 0-23
+        self.discharging_time_input_end.setValidator(QIntValidator(0, 23))  # 小时范围 0-23
+        self.discharging_soc_input.setValidator(QIntValidator(0, 100))  # 整数范围 0-100        
 
 
         #===== 创建日志显示区
@@ -305,6 +341,9 @@ class WebSocketClient(QMainWindow):
                 color: #333333;
                 border: 1px solid rgba(128, 128, 128, 0.1);
                 border-radius: 5px;
+            }
+            QTextEdit::item:hover {
+                 background-color: #ffffff;
             }
         """)  # 设置日志显示区背景颜色
         left_layout.addWidget(self.log_text)  # 添加日志显示区
@@ -338,6 +377,7 @@ class WebSocketClient(QMainWindow):
         """)
 
         self.disconnect_btn.setStyleSheet("""
+           
             QPushButton {
                 background-color: #f44336;  /* 红色 */
                 color: white;  /* 字体颜色 */
@@ -369,33 +409,6 @@ class WebSocketClient(QMainWindow):
         
 
         left_layout.addLayout(button_layout)  # 使用布局替代单独添加按钮
-
-        # 创建右侧数据显示列表
-        self.data_list = QListWidget(self)  # 数据显示列表控件
-        self.data_list.setStyleSheet("QListWidget { font-size: 14px; }")  # 设置列表样式
-        
-        # 设置右侧数据详细显示框样式
-        self.data_list.setStyleSheet("""
-            QListWidget {
-                border: 0px solid gray;
-                background-color: #f0f0f0;
-                font-size: 14px;
-                color: #333333;
-                border-radius: 5px;
-                padding: 5px;
-            }
-            QListWidget::item {
-                padding: 1px;
-            }
-            QListWidget::item:selected {
-                background-color: #d0e0f0;
-            }
-        """)
-
-        # 添加面板到主布局
-        main_layout.addWidget(left_panel)
-        main_layout.addWidget(self.data_list)
-
         # 设置输入框的大小策略
         self.charging_time_input_start.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.charging_time_input_end.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -404,6 +417,42 @@ class WebSocketClient(QMainWindow):
         self.charging_soc_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.discharging_soc_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     
+
+
+        # 创建右侧数据显示列表
+        self.data_list = QListWidget(self)  # 数据显示列表控件
+        self.data_list.setStyleSheet("QListWidget { font-size: 14px; }")  # 设置列表样式
+        self.data_list.setContentsMargins(5, 2, 5, 5)  # 设置无边距
+        # self.data_list.setGeometry(800, 0, 400, 900)  # 设置位置和大小
+        # 设置右侧数据详细显示框样式
+        self.data_list.setStyleSheet("""
+            QListWidget {
+                
+                border: 0px solid gray;
+                background-color: #f0f0f0;
+                font-size: 14px;
+                color: #333333;
+                border-radius: 5px;
+                padding: 5px;
+                border: 1px solid rgba(128, 128, 128, 0.1);
+                padding-bottom: 15px;
+            }
+            QListWidget::item {
+                padding: 1px;
+                margin: 1px;
+                
+            }
+            QListWidget::item:selected {
+                background-color: #d0e0f0;
+            }
+            QListWidget::item:hover {
+                 
+            }
+        """)
+
+        # 添加面板到主布局
+        main_layout.addWidget(left_panel)
+        main_layout.addWidget(self.data_list)
 
 
     # 日志记录函数
@@ -416,9 +465,11 @@ class WebSocketClient(QMainWindow):
     def start_websocket(self):
         try:
             self.connect_btn.setEnabled(False)
+            # self.connect_btn.setStyleSheet(" color: darkgray;")  # 禁用状态样式
             self.disconnect_btn.setEnabled(True)
             self.refresh_btn.setEnabled(True)  # 连接后启用刷新按钮
             self.log("正在连接WebSocket...")
+
             
             # 启动WebSocket工作线程
             self.ws_worker = WebSocketWorker()
@@ -433,6 +484,8 @@ class WebSocketClient(QMainWindow):
             self.connect_btn.setEnabled(True)
             self.disconnect_btn.setEnabled(False)
             self.refresh_btn.setEnabled(False)
+            # self.disconnect_btn.setStyleSheet(" color: darkgray;")  # 禁用状态样式
+            # self.refresh_btn.setStyleSheet("color: darkgray;")  # 禁用状态样式
     
     # 停止WebSocket工作线程
     def stop_websocket(self):
@@ -442,8 +495,11 @@ class WebSocketClient(QMainWindow):
             self.ws_worker = None
         
         self.connect_btn.setEnabled(True)
+        # self.connect_btn.setStyleSheet(" color: white;")  # 禁用状态样式
         self.disconnect_btn.setEnabled(False)
+        # self.disconnect_btn.setStyleSheet(" color:darkgray;")  # 禁用状态样式
         self.refresh_btn.setEnabled(False)  # 断开连接时禁用刷新按钮
+        # self.refresh_btn.setStyleSheet(" color:darkgray;")  # 禁用状态样式
         self.log("WebSocket连接已断开")
 
     # 处理WebSocket工作线程消息
@@ -627,6 +683,7 @@ class WebSocketClient(QMainWindow):
         except Exception as e:
             self.log(f"处理点击事件出错: {str(e)}")
 
+    # 获取树节点的层级
     def get_item_level(self, item):
         """获取树节点的层级（0-顶级分组，1-设备，2-数据项）"""
         level = 0
@@ -636,6 +693,7 @@ class WebSocketClient(QMainWindow):
             parent = parent.parent()
         return level
 
+    # 根据点击项和层级获取需显示的数据ID列表
     def get_rtv_ids_for_item(self, item, level):
         """根据点击项和层级获取需显示的数据ID列表"""
         rtv_ids = []
@@ -673,6 +731,7 @@ class WebSocketClient(QMainWindow):
             self.log(f"获取数据ID出错: {str(e)}")
             return []
 
+    # 根据ID列表更新右侧数据显示
     def update_data_list_by_ids(self, rtv_ids):
         """根据ID列表更新右侧数据显示"""
         try:
@@ -731,6 +790,7 @@ class WebSocketClient(QMainWindow):
         except Exception as e:
             self.log(f"更新数据列表出错: {str(e)}")
 
+    # 获取最新一次的数据值
     def get_latest_value(self, item_id):
         """获取最新一次的数据值"""
         try:
@@ -746,7 +806,8 @@ class WebSocketClient(QMainWindow):
     def closeEvent(self, event):
         self.stop_websocket()  # 停止WebSocket工作线程
         event.accept()  # 接受关闭事件
-
+    
+    # 手动刷新数据
     def refresh_data(self):
         """手动刷新数据"""
         try:
@@ -762,7 +823,10 @@ class WebSocketClient(QMainWindow):
         except Exception as e:
             self.log(f"刷新数据出错: {str(e)}")
 
+    # 定时更新显示
     def update_display(self):
+        # from emsContronl import ChargeDischargeController  # 延迟导入
+
         """定时更新显示"""
         try:
             # 如果有选中的项，更新其显示
@@ -774,18 +838,72 @@ class WebSocketClient(QMainWindow):
                     self.update_data_list_by_ids(rtv_ids)
                     
             # 假设这些数据是您从某个地方获取的
-            soc = self.latest_rtv_data.get('412001056')  # SOC
-            charging_start_time = self.charging_time_input_start.text()  # 获取充电开始时间
-            charging_end_time = self.charging_time_input_end.text()  # 获取充电结束时间
-            discharging_start_time = self.discharging_time_input_start.text()  # 获取放电开始时间
-            discharging_end_time = self.discharging_time_input_end.text()  # 获取放电结束时间
-            soc_upper_limit = self.charging_soc_input.text()  # 获取SOC上限
-            soc_lower_limit = self.discharging_soc_input.text()  # 获取SOC下限
+            # soc = self.latest_rtv_data.get('412001056')  # SOC
+            # charging_start_time = self.charging_time_input_start.text()  # 获取充电开始时间
+            # charging_end_time = self.charging_time_input_end.text()  # 获取充电结束时间
+            # discharging_start_time = self.discharging_time_input_start.text()  # 获取放电开始时间
+            # discharging_end_time = self.discharging_time_input_end.text()  # 获取放电结束时间
+            # soc_upper_limit = self.charging_soc_input.text()  # 获取SOC上限
+            # soc_lower_limit = self.discharging_soc_input.text()  # 获取SOC下限
+            # 获取并转换变量
+            soc = float(self.latest_rtv_data.get('412001056', 0))  # SOC，默认值为0
+            runModel = (self.latest_rtv_data.get('412001051', 0))  # PCS运行模式 默认值为0
+            charging_start_time = int(self.charging_time_input_start.text())  # 充电开始时间
+            charging_end_time = int(self.charging_time_input_end.text())  # 充电结束时间
+            discharging_start_time = int(self.discharging_time_input_start.text())  # 放电开始时间
+            discharging_end_time = int(self.discharging_time_input_end.text())  # 放电结束时间
+            soc_upper_limit = float(self.charging_soc_input.text())  # SOC上限
+            soc_lower_limit = float(self.discharging_soc_input.text())  # SOC下限            
 
             # 调用监控控制器的方法
-            self.controller.monitor_charge_discharge(soc, charging_start_time, charging_end_time, discharging_start_time, discharging_end_time, soc_upper_limit, soc_lower_limit)
+            self.controller.monitor_charge_discharge(soc, charging_start_time, charging_end_time, discharging_start_time, discharging_end_time, soc_upper_limit, soc_lower_limit,runModel)
         except Exception as e:
             pass  # 静默处理定时器的错误，避免日志刷屏
+    
+    # 连接按钮点击
+    def on_connect_button_clicked(self):
+      if not self.validate_inputs():
+          self.log("请填写所有输入框！")
+          return  # 如果输入不完整，返回而不发起连接
+  
+      # 如果所有输入框都填写了，继续执行连接逻辑
+    #   self.log("正在连接WebSocket...")
+    #   self.ws_worker = WebSocketWorker()
+    #   self.ws_worker.message_signal.connect(self.handle_message)
+      # 其他连接逻辑...  
+    
+      # 启动WebSocket工作线程
+
+
+    def validate_inputs(self):
+    # 检查六个输入框是否都有输入
+      if (self.charging_soc_input.text() == "" or   
+          self.charging_time_input_start.text() == "" or   
+          self.charging_time_input_end.text() == "" or
+          self.discharging_time_input_start.text() == "" or
+          self.discharging_time_input_end.text() == "" or
+          self.discharging_soc_input.text() == ""):
+          return False
+      return True
+    
+    # 更新连接按钮状态
+    def update_connect_button_state(self):
+      if self.validate_inputs():
+          self.connect_btn.setEnabled(True)  # 启用连接按钮
+        #   self.connect_btn.setStyleSheet("background-color: #4CAF50;")  # 禁用状态样式
+        #   self.connect_btn.setEnabled(False)
+      else:
+          self.connect_btn.setEnabled(False)  # 禁用连接按钮
+        #   self.connect_btn.setStyleSheet(" background-color: #45a049;")  # 禁用状态样式
+
+    # 设置输入验证
+    def setup_input_validations(self):
+     self.charging_soc_input.textChanged.connect(self.update_connect_button_state)
+     self.charging_time_input_start.textChanged.connect(self.update_connect_button_state)
+     self.charging_time_input_end.textChanged.connect(self.update_connect_button_state)
+     self.discharging_time_input_start.textChanged.connect(self.update_connect_button_state)
+     self.discharging_time_input_end.textChanged.connect(self.update_connect_button_state)
+     self.discharging_soc_input.textChanged.connect(self.update_connect_button_state)      
 
 # WebSocket工作线程类
 class WebSocketWorker(QThread):
@@ -800,8 +918,11 @@ class WebSocketWorker(QThread):
         self.need_refresh = False  # 添加刷新标志
 
     async def connect_websocket(self):
-        # 使用固定的token
-        uri = "ws://ems.hy-power.net:8888/E6F7D5412A20?d0bdae3f37de30f0a3386ca265b9dad07111a89679add764042f12ca60d017da2bc9de82cfcb45f59151e279661e6954639c4def137595e5e7350632baced8925503b37206c533afad17ad72120a814a"
+        # 使用固定的token  
+        uri = "ws://ems.hy-power.net:8888/E6F7D5412A20?e167f6f558238169710ac8b9d5650b61d481490772716cd194692bfcda4d6128ff00f4c65ebf2d2e1ef708549e524d6235ad9c9d10924d778036649652059b867271c4ceb0bb0b063db5ce953c41be1d"
+        # token1=E6F7D5412A20?d0bdae3f37de30f0a3386ca265b9dad07111a89679add764042f12ca60d017da2bc9de82cfcb45f59151e279661e6954639c4def137595e5e7350632baced8925503b37206c533afad17ad72120a814a
+        # token2=b0ac72586e62bd176ba82a77ae33d76f77774f1ca1fbcda6c57d55063cda7430c51d2736206b95b0872811af043fc8e412e2f40fb0a426dd64dc046c5f1d708f4d19106ee498bfc911111a0113ca6121
+        # token3=e167f6f558238169710ac8b9d5650b61d481490772716cd194692bfcda4d6128ff00f4c65ebf2d2e1ef708549e524d6235ad9c9d10924d778036649652059b867271c4ceb0bb0b063db5ce953c41be1d
         
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -869,6 +990,25 @@ class WebSocketWorker(QThread):
 
     def run(self):
         asyncio.run(self.connect_websocket())
+     
+    def send_cmd_subscription(self, cmd_id, ref_fid, ref_rid, value):
+        # 构建要发送的消息
+        message = {
+            "func": "cmd",
+            "id": cmd_id,
+            "refFid": ref_fid,
+            "refRid": ref_rid,
+            "value": value
+        }
+
+        # 将消息转换为 JSON 字符串
+        message_json = json.dumps(message)
+        
+        # 发送消息
+        self.send_message(message_json)  # 使用 send_message 方法发送
+        print(f"发送CMD消息: {message_json}")  # 记录发送的消息
+
+
 
     def stop(self):
         """停止工作线程"""
@@ -879,6 +1019,7 @@ class WebSocketWorker(QThread):
         """请求刷新数据"""
         self.need_refresh = True
 
+# 主函数
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = WebSocketClient()
