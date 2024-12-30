@@ -85,7 +85,7 @@ class ChargeDischargeController:
                      print("本身在充电")
                      return
                 else:
-                  self.send_cmd(value=2)
+                #   self.send_cmd(value=2)
                   self.is_charging = True
                   print("开始充电")
                 # controller.send_cmd(value=1)  # 发送命令
@@ -112,34 +112,34 @@ class ChargeDischargeController:
 
     
 
-    def start_charging(self):
-        if self.is_charging:
-            return
-        else:
-            self.send_cmd(value=1)
-        self.is_charging = True
-        print("开始充电")
+    # def start_charging(self):
+    #     if self.is_charging:
+    #         return
+    #     else:
+    #         self.send_cmd(value=1)
+    #     self.is_charging = True
+    #     print("开始充电")
 
-    def stop_charging(self):
-        if not self.is_charging:
-            return
-        else:
-            self.send_cmd(value=0)
-        self.is_charging = False
-        print("停止充电")
+    # def stop_charging(self):
+    #     if not self.is_charging:
+    #         return
+    #     else:
+    #         self.send_cmd(value=0)
+    #     self.is_charging = False
+    #     print("停止充电")
 
-    def start_discharging(self):
-        if self.is_discharging:
-            return  
-        else:
-            self.send_cmd(value=-1)
-        self.is_discharging = True
-        print("开始放电")
+    # def start_discharging(self):
+    #     if self.is_discharging:
+    #         return  
+    #     else:
+    #         self.send_cmd(value=-1)
+    #     self.is_discharging = True
+    #     print("开始放电")
 
-    def stop_discharging(self):
-        if not self.is_discharging:
-            return
-        else:
-            self.send_cmd(value=0)  
-        self.is_discharging = False
-        print("停止放电")
+    # def stop_discharging(self):
+    #     if not self.is_discharging:
+    #         return
+    #     else:
+    #         self.send_cmd(value=0)  
+    #     self.is_discharging = False
+    #     print("停止放电")
