@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="F:\客户项目\Marcin\荷兰215kw户外柜项目\Jake215户外柜自动化开关充放电\venv"
+VIRTUAL_ENV="F:\360Downloads\BaiduNetdiskDownload\WicToolDemo\autoRunBY-EMS\venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

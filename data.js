@@ -204,6 +204,7 @@ const subscribeMessage2 = JSON.stringify({
     ],
     "period": 5
 });
+
 socket.send(subscribeMessage2);
 
 // 返回的数据结构和真实数据

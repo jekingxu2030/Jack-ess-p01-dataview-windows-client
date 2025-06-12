@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=F:\客户项目\Marcin\荷兰215kw户外柜项目\Jake215户外柜自动化开关充放电\venv
+set VIRTUAL_ENV=F:\360Downloads\BaiduNetdiskDownload\WicToolDemo\autoRunBY-EMS\venv
 
 if not defined PROMPT set PROMPT=$P$G
 

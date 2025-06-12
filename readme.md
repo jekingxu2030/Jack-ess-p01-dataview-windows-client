@@ -120,9 +120,16 @@ pip install -r requirements.txt
 
 2. 运行程序：
 ```bash
-python ems_monitor.py
+先进入虚拟环境
+.\venv\Scripts\activate
+再运行程序
+python ems_monitor_client.py
 ```
-
+打包exe
+```bash
+pyinstaller ems_monitor_client.spec
+执行打包后的程序
+.\dist\ems_monitor_client\ems_monitor_client.exe
 ## 功能说明
 1. 自动登录EMS管理后台
 2. 自动识别验证码（失败后支持人工输入）
