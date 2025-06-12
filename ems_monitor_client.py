@@ -53,7 +53,7 @@ class WebSocketClient(QMainWindow):
         
     # 初始化UI
     def initUI(self):
-        self.setWindowTitle('BY-EMS Monitoring System V1.0')  # 设置窗口标题
+        self.setWindowTitle('BY-EMS Monitoring System V1.0 (E6F7D5412A20:P01)')  # 设置窗口标题
         self.setGeometry(100, 100, 1600, 900)  # 设置窗口大小
         
         # 添加窗口边框样式的设置 rgba(255, 255, 255, 0.8)
