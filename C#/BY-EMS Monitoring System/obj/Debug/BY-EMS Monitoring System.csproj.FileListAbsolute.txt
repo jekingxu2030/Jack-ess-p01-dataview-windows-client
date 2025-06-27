@@ -1,5 +1,0 @@
-F:\360Downloads\BaiduNetdiskDownload\WicToolDemo\autoRunBY-EMS\C#\BY-EMS Monitoring System\obj\Debug\BY-EMS Monitoring System.csproj.AssemblyReference.cache
-F:\360Downloads\BaiduNetdiskDownload\WicToolDemo\autoRunBY-EMS\C#\BY-EMS Monitoring System\obj\Debug\MainWindow.g.cs
-F:\360Downloads\BaiduNetdiskDownload\WicToolDemo\autoRunBY-EMS\C#\BY-EMS Monitoring System\obj\Debug\App.g.cs
-F:\360Downloads\BaiduNetdiskDownload\WicToolDemo\autoRunBY-EMS\C#\BY-EMS Monitoring System\obj\Debug\BY-EMS Monitoring System_MarkupCompile.cache
-F:\360Downloads\BaiduNetdiskDownload\WicToolDemo\autoRunBY-EMS\C#\BY-EMS Monitoring System\obj\Debug\BY-EMS Monitoring System_MarkupCompile.lref
