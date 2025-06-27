@@ -45,10 +45,10 @@ class WebSocketClient(QMainWindow):
         # self.setup_input_validations()  # 设置输入验证
 
         # self.connect_btn.setEnabled(False)
-        # self.disconnect_btn.setEnabled(False)
-        # self.refresh_btn.setEnabled(False)
-        # self.disconnect_btn.setStyleSheet(" color: darkgray;")  # 禁用状态样式
-        # self.refresh_btn.setStyleSheet("color: darkgray;")  # 禁用状态样式
+        self.disconnect_btn.setEnabled(False)
+        self.refresh_btn.setEnabled(False)
+        self.disconnect_btn.setStyleSheet(" color: darkgray;")  # 禁用状态样式
+        self.refresh_btn.setStyleSheet("color: darkgray;")  # 禁用状态样式
         
         
     # 初始化UI
@@ -138,38 +138,6 @@ class WebSocketClient(QMainWindow):
         """)  # 设置左上角标题样式
         # top_left_label.setGeometry(2, 2, 100, 30)  # 设置绝对位置和大小
         monitoring_settings_layout.addWidget(top_left_label)  # 添加左上角标题
-        
-        #== 添加Token输入框
-        token_label = QLabel('WebSocket Token:', self)
-        token_widget = QWidget(self)  # 创建一个新的QWidget来包含token布局
-        token_layout = QHBoxLayout(token_widget)
-        token_widget.setStyleSheet("background-color: #f0f0f0; border:0px")  # 设置背景色
-        self.token_input = QLineEdit(self)
-        self.token_input.setFixedWidth(450)  # 设置宽度
-        self.token_input.setStyleSheet("""
-            QLineEdit {
-               background-color:rgba(255, 255, 255, 0.9);   
-                text-align: center;
-                border: 1px solid #f0f0f0;
-                border-radius: 1px;
-                color:#2196F3;
-                padding: 2px;
-                font-size: 12px;
-            }
-        """)
-        # 设置默认token值
-        self.token_input.setText("e167f6f558238169710ac8b9d5650b61d481490772716cd194692bfcda4d6128ff00f4c65ebf2d2e1ef708549e524d6235ad9c9d10924d778036649652059b867271c4ceb0bb0b063db5ce953c41be1d")
-        
-        token_layout.addWidget(token_label)
-        token_layout.addWidget(self.token_input)
-        token_layout.setAlignment(Qt.AlignLeft)  # 设置对齐方式为左对齐
-        
-        token_widget.setLayout(token_layout)  # 设置布局
-        monitoring_settings_layout.addWidget(token_widget)  # 将新QWidget添加到监控设置栏
-        
-        # 设置token标签宽度
-        token_label.setFixedWidth(120)  # 设置固定宽度
-        token_label.setStyleSheet(f"color: #2196F3;width: 100px;")
  
         #== 添加充电时间输入框
         charging_time_label = QLabel('充电时间(HH):', self)
@@ -502,14 +470,9 @@ class WebSocketClient(QMainWindow):
             self.refresh_btn.setEnabled(True)  # 连接后启用刷新按钮
             self.log("正在连接WebSocket...")
 
-            # 获取token输入框的值
-            token = self.token_input.text()
-            if not token:
-                self.log("警告：Token输入框为空，将使用默认token")
             
             # 启动WebSocket工作线程
             self.ws_worker = WebSocketWorker()
-            self.ws_worker.set_token(token)  # 设置token
             self.ws_worker.message_signal.connect(self.handle_message)
             self.ws_worker.log_signal.connect(self.log)
             self.ws_worker.start()
@@ -521,8 +484,8 @@ class WebSocketClient(QMainWindow):
             self.connect_btn.setEnabled(True)
             self.disconnect_btn.setEnabled(False)
             self.refresh_btn.setEnabled(False)
-            # self.disconnect_btn.setStyleSheet(" color: darkgray;")  # 禁用状态样式
-            # self.refresh_btn.setStyleSheet("color: darkgray;")  # 禁用状态样式
+            self.disconnect_btn.setStyleSheet(" color: darkgray;")  # 禁用状态样式
+            self.refresh_btn.setStyleSheet("color: darkgray;")  # 禁用状态样式
     
     # 停止WebSocket工作线程
     def stop_websocket(self):
@@ -534,9 +497,9 @@ class WebSocketClient(QMainWindow):
         self.connect_btn.setEnabled(True)
         # self.connect_btn.setStyleSheet(" color: white;")  # 禁用状态样式
         self.disconnect_btn.setEnabled(False)
-        # self.disconnect_btn.setStyleSheet(" color:darkgray;")  # 禁用状态样式
+        self.disconnect_btn.setStyleSheet(" color:darkgray;")  # 禁用状态样式
         self.refresh_btn.setEnabled(False)  # 断开连接时禁用刷新按钮
-        # self.refresh_btn.setStyleSheet(" color:darkgray;")  # 禁用状态样式
+        self.refresh_btn.setStyleSheet(" color:darkgray;")  # 禁用状态样式
         self.log("WebSocket连接已断开")
 
     # 处理WebSocket工作线程消息
@@ -874,7 +837,14 @@ class WebSocketClient(QMainWindow):
                 if rtv_ids:
                     self.update_data_list_by_ids(rtv_ids)
                     
-      
+            # 假设这些数据是您从某个地方获取的
+            # soc = self.latest_rtv_data.get('412001056')  # SOC
+            # charging_start_time = self.charging_time_input_start.text()  # 获取充电开始时间
+            # charging_end_time = self.charging_time_input_end.text()  # 获取充电结束时间
+            # discharging_start_time = self.discharging_time_input_start.text()  # 获取放电开始时间
+            # discharging_end_time = self.discharging_time_input_end.text()  # 获取放电结束时间
+            # soc_upper_limit = self.charging_soc_input.text()  # 获取SOC上限
+            # soc_lower_limit = self.discharging_soc_input.text()  # 获取SOC下限
             # 获取并转换变量
             soc = float(self.latest_rtv_data.get('412001056', 0))  # SOC，默认值为0
             runModel = (self.latest_rtv_data.get('412001051', 0))  # PCS运行模式 默认值为0
@@ -942,31 +912,15 @@ class WebSocketWorker(QThread):
     refresh_signal = pyqtSignal()  # 添加刷新信号
 
     def __init__(self):
-        # 调用父类的构造函数
         super().__init__()
-        # 设置程序运行状态为True
         self.is_running = True
         self.websocket = None
         self.need_refresh = False  # 添加刷新标志
-        # 初始化WebSocket连接为None
-        self.websocket = None
-        # 设置是否需要刷新为False
-        self.need_refresh = False
-        # 初始化token
-        self.token = None
-        
-    def set_token(self, token):
-        """设置WebSocket连接使用的token"""
-        self.token = token
 
     async def connect_websocket(self):
-        # 使用从UI获取的token
-        if not self.token:
-            self.log_signal.emit("未设置token，使用默认token")
-            self.token = "a7b403de831ad791006d86e86ecd67ae9df47ba05146fd407080b85a78f430882a1286f19d2d9fbee41ad81fce7e13dc24d75c2a3db4eb445b7f552a0f4bdba656486d824b90533603b7a92ee9130396"
-        
-        uri='ws://ems.hy-power.net:8888/E6F7D5412A20?'+self.token
-        print("uri:",uri)
+        # 使用单次登录有效的token  
+        token="63f0efd89ab8b6ab850b71ea5ec30c9b89af7999fee2592ca5a30ca2f098f684ac720bef95d7b7332b7031be375548da233dfc0e1b07187101b3cf38d658ba99d25d20b07e60fb5a7ea90b9c52cb5faa"
+        uri='ws://ems.hy-power.net:8888/E6F7D5412A20?'+token
         headers = {
           
         }
