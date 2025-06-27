@@ -497,7 +497,7 @@ class WebSocketClient(QMainWindow):
     def start_websocket(self):
         try:
             self.connect_btn.setEnabled(False)
-            # self.connect_btn.setStyleSheet(" color: darkgray;")  # 禁用状态样式
+            self.connect_btn.setStyleSheet(" color: darkgray;")  # 禁用状态样式
             self.disconnect_btn.setEnabled(True)
             self.refresh_btn.setEnabled(True)  # 连接后启用刷新按钮
             self.log("正在连接WebSocket...")
@@ -519,8 +519,8 @@ class WebSocketClient(QMainWindow):
         except Exception as e:
             self.log(f"启动WebSocket连接失败: {str(e)}")
             self.connect_btn.setEnabled(True)
-            self.disconnect_btn.setEnabled(False)
-            self.refresh_btn.setEnabled(False)
+            # self.disconnect_btn.setEnabled(False)
+            # self.refresh_btn.setEnabled(False)
             # self.disconnect_btn.setStyleSheet(" color: darkgray;")  # 禁用状态样式
             # self.refresh_btn.setStyleSheet("color: darkgray;")  # 禁用状态样式
     
@@ -533,9 +533,9 @@ class WebSocketClient(QMainWindow):
         
         self.connect_btn.setEnabled(True)
         # self.connect_btn.setStyleSheet(" color: white;")  # 禁用状态样式
-        self.disconnect_btn.setEnabled(False)
+        # self.disconnect_btn.setEnabled(False)
         # self.disconnect_btn.setStyleSheet(" color:darkgray;")  # 禁用状态样式
-        self.refresh_btn.setEnabled(False)  # 断开连接时禁用刷新按钮
+        # self.refresh_btn.setEnabled(False)  # 断开连接时禁用刷新按钮
         # self.refresh_btn.setStyleSheet(" color:darkgray;")  # 禁用状态样式
         self.log("WebSocket连接已断开")
 
@@ -980,7 +980,10 @@ class WebSocketWorker(QThread):
                 async with websockets.connect(uri, extra_headers=headers) as websocket:
                     self.websocket = websocket
                     self.log_signal.emit("WebSocket连接已建立")
-                    
+                    # self.disconnect_btn.setEnabled(True)
+                    # self.refresh_btn.setEnabled(Ture)
+                    # self.disconnect_btn.setStyleSheet(" color: red;")  # 禁用状态样式
+                    # self.refresh_btn.setStyleSheet("color: primary;")  # 禁用状态样式
                     # 发送初始menu订阅
                     menu_subscribe = {"func": "menu"}
                     await websocket.send(json.dumps(menu_subscribe))
@@ -1032,6 +1035,10 @@ class WebSocketWorker(QThread):
                             
             except Exception as e:
                 self.log_signal.emit(f"WebSocket连接错误: {str(e)}，3秒后重试...")
+                # self.disconnect_btn.setEnabled(False)
+                # self.refresh_btn.setEnabled(False)
+                # self.disconnect_btn.setStyleSheet(" color: darkgray;")  # 禁用状态样式
+                # self.refresh_btn.setStyleSheet("color: darkgray;")  # 禁用状态样式
                 await asyncio.sleep(3)  # 等待3秒后重试
 
     def run(self):
@@ -1058,8 +1065,13 @@ class WebSocketWorker(QThread):
 
     def stop(self):
         """停止工作线程"""
+        # self.stop_websocket()  # 停止WebSocket工作线程
         self.is_running = False
         self.websocket = None  # 直接清空 websocket 实例
+        # self.disconnect_btn.setEnabled(False)
+        # self.refresh_btn.setEnabled(False)
+        # self.disconnect_btn.setStyleSheet(" color: darkgray;")  # 禁用状态样式
+        # self.refresh_btn.setStyleSheet("color: darkgray;")  # 禁用状态样式
         
     def request_refresh(self):
         """请求刷新数据"""
