@@ -4,10 +4,14 @@ import json
 import asyncio
 import websockets
 from datetime import datetime
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
+from PyQt5.QtCore import pyqtSlot
+import requests
+import threading
+from auth_manager import AuthManager
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QMessageBox,
                            QHBoxLayout, QPushButton, QLabel, QTextEdit, 
                            QTreeWidget, QTreeWidgetItem, QListWidget, QListWidgetItem,
-                           QHeaderView, QGraphicsDropShadowEffect, QLineEdit, QSizePolicy)
+                           QHeaderView, QGraphicsDropShadowEffect, QLineEdit, QSizePolicy, QCheckBox)
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QTimer
 from PyQt5.QtGui import QColor, QIcon, QFont,QIntValidator, QDoubleValidator
 import traceback
@@ -17,9 +21,17 @@ from emsContronl import ChargeDischargeController  # 导入监控控制器
 class WebSocketClient(QMainWindow):
     def __init__(self):
         super().__init__()
+        # 初始化认证管理器
+        self.auth_manager = AuthManager(self)
+        self.auth_manager.login_success.connect(self.on_login_success)
+        self.auth_manager.login_failed.connect(self.on_login_failed)
+        self.auth_manager.token_updated.connect(self.on_token_updated)
+        self.token = None
         self.ws_worker = None  # WebSocket工作线程实例
         self.device_info = {}  # 设备ID和名称的映射关系
         self.latest_rtv_data = {}  # 存储最新的rtv数据
+        
+
         
         self.log_text = QTextEdit(self)
         self.log_text.setReadOnly(True)  # 设置为只读
@@ -36,9 +48,15 @@ class WebSocketClient(QMainWindow):
             self.log(f"设置窗口图标失败: {str(e)}")
         
         self.initUI()  # 初始化UI
-
+        
+        # 代理设置
+        self.proxy_enabled = False
+        self.proxy_address = "127.0.0.1:7890"  # 默认代理地址
         
         self.controller = ChargeDischargeController(log_callback=self.log)  # 创建监控控制器实例
+        # 连接登录信号与槽函数
+        self.auth_manager.login_success.connect(self.on_login_success)
+        self.auth_manager.login_failed.connect(self.on_login_failed)
 
         self.device_tree.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # 禁止横向滚动条
       
@@ -52,6 +70,39 @@ class WebSocketClient(QMainWindow):
         
         
     # 初始化UI
+    
+        
+    def do_login(self):
+        username = self.username_input.text().strip()
+        password = self.password_input.text().strip()
+        if not username or not password:
+            QMessageBox.warning(self, "输入错误", "用户名和密码不能为空")
+            return
+        self.log("正在登录...")
+        self.login_btn.setEnabled(False)
+        # 在新线程中执行登录以避免UI阻塞
+        threading.Thread(target=self.auth_manager.login, args=(username, password), daemon=True).start()
+        
+    @pyqtSlot(str)
+    def on_login_success(self, message):
+        self.log(message)
+        self.login_btn.setEnabled(True)
+        QMessageBox.information(self, "登录成功", message)
+        # 登录成功后自动连接WebSocket
+        if hasattr(self, 'connect_btn') and not self.ws_worker:
+            self.connect_btn.click()
+        
+    @pyqtSlot(str)
+    def on_login_failed(self, error):
+        self.log(f"登录失败: {error}")
+        self.login_btn.setEnabled(True)
+        QMessageBox.critical(self, "登录失败", error)
+        
+    @pyqtSlot(str)
+    def on_token_updated(self, token):
+        self.token = token
+        self.log(f"已更新WebSocket令牌: {token[:16]}...")
+        
     def initUI(self):
         self.setWindowTitle('BY-EMS Monitoring System V1.0 (E6F7D5412A20:P01)')  # 设置窗口标题
         self.setGeometry(100, 100, 1600, 900)  # 设置窗口大小
@@ -60,11 +111,35 @@ class WebSocketClient(QMainWindow):
         self.setStyleSheet("QMainWindow { border: 0px solid red; border-radius: 0px; background-color: #f0f0f0; padding: 5px;}")  # 设置边框样式
         self.setGraphicsEffect(QGraphicsDropShadowEffect(blurRadius=2, xOffset=2, yOffset=2))  # 添加阴影效果
 
+        # 创建登录布局
+        login_layout = QHBoxLayout()
+        login_layout.addWidget(QLabel("用户名:"))
+        self.username_input = QLineEdit()
+        self.username_input.setText("WC001")
+        login_layout.addWidget(self.username_input)
+        
+        login_layout.addWidget(QLabel("密码:"))
+        self.password_input = QLineEdit()
+        self.password_input.setEchoMode(QLineEdit.Password)
+        self.password_input.setText("123456789")
+        login_layout.addWidget(self.password_input)
+        
+        self.login_btn = QPushButton("登录")
+        self.login_btn.clicked.connect(self.do_login)
+        login_layout.addWidget(self.login_btn)
+
         #=== 创建中心部件和布局
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        main_layout = QHBoxLayout(central_widget)
-        main_layout.setContentsMargins(0, 0, 0, 0)  # 设置左、上、右、下边距为10像素
+        main_layout = QVBoxLayout(central_widget)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(10)
+        main_layout.addLayout(login_layout)
+        
+
+
+        # 添加主内容布局
+        content_layout = QHBoxLayout()
 
         #=== 创建左侧面板gin
         left_panel = QWidget()
@@ -919,11 +994,16 @@ class WebSocketWorker(QThread):
 
     async def connect_websocket(self):
         # 使用固定的token  
-        # uri = "ws://ems.hy-power.net:8888/E6F7D5412A20?e167f6f558238169710ac8b9d5650b61d481490772716cd194692bfcda4d6128ff00f4c65ebf2d2e1ef708549e524d6235ad9c9d10924d778036649652059b867271c4ceb0bb0b063db5ce953c41be1d"
+        # uri = "ws://ems.hy-power.net:8888/E6F7D5412A20?2582f418892c0da5b1885e55c1de3f91f31ef58e0f8f65ffb516f0bb251abb343c114a5ced04fb5dd98aa2b29f5916bb06d532851e190df95dcb053f1f3cd1f59cffd8307eb0444f9726658af8191070"
         # token1=E6F7D5412A20?d0bdae3f37de30f0a3386ca265b9dad07111a89679add764042f12ca60d017da2bc9de82cfcb45f59151e279661e6954639c4def137595e5e7350632baced8925503b37206c533afad17ad72120a814a
         # token2=b0ac72586e62bd176ba82a77ae33d76f77774f1ca1fbcda6c57d55063cda7430c51d2736206b95b0872811af043fc8e412e2f40fb0a426dd64dc046c5f1d708f4d19106ee498bfc911111a0113ca6121
         # token3=e167f6f558238169710ac8b9d5650b61d481490772716cd194692bfcda4d6128ff00f4c65ebf2d2e1ef708549e524d6235ad9c9d10924d778036649652059b867271c4ceb0bb0b063db5ce953c41be1d
-        uri = "ws://ems.hy-power.net:8888/E6F7D5412A20?bfca76a4d58bf72a081151f64a910b2637a2f1d980958edc2818cedf62d6a940968b2c415f28458e5c131a06d17049aad10dde5dd6726f7e12847f565fc8c1e221cb8c4bc8924157b019ebd8e99d0761"
+        # uri = "ws://ems.hy-power.net:8888/E6F7D5412A20?bfca76a4d58bf72a081151f64a910b2637a2f1d980958edc2818cedf62d6a940968b2c415f28458e5c131a06d17049aad10dde5dd6726f7e12847f565fc8c1e221cb8c4bc8924157b019ebd8e99d0761"
+        # 使用认证管理器获取WebSocket URL
+        uri = self.auth_manager.get_ws_url()
+        if not uri:
+            self.log_signal.emit("错误: 未获取到WebSocket连接地址，请先登录")
+            return
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Origin": "http://ems.hy-power.net:8114",
@@ -931,7 +1011,7 @@ class WebSocketWorker(QThread):
 
         while self.is_running:  # 添加外层循环实现重连
             try:
-                async with websockets.connect(uri, extra_headers=headers) as websocket:
+                async with websockets.connect(uri+token, extra_headers=headers) as websocket:
                     self.websocket = websocket
                     self.log_signal.emit("WebSocket连接已建立")
                     
