@@ -163,15 +163,11 @@ class MainWindow(QMainWindow):
             self.update_timer = QTimer()
             self.update_timer.timeout.connect(self.refresh_data)
             self.update_timer.start(1000)
-    except Exception as e:
-        self.log(f"启动WebSocket连接失败: {str(e)}")
-        self.connect_btn.setEnabled(True)
             # 连接成功后自动刷新数据
             QTimer.singleShot(1000, self.refresh_data)
         except Exception as e:
             self.log(f"启动WebSocket连接失败: {str(e)}")
             self.connect_btn.setEnabled(True)
-
     def stop_websocket(self):
         if self.ws_worker:
             self.ws_worker.stop()
